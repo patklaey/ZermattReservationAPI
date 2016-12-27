@@ -22,3 +22,7 @@ class Reservation(db.Model):
         dict = self.__dict__
         del dict['_sa_instance_state']
         return dict
+
+    @staticmethod
+    def get_required_attributes():
+        return ['title', 'start_date', 'end_date', 'all_day', 'description', 'user_id']

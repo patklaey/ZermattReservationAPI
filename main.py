@@ -1,11 +1,9 @@
-from flask import Flask, session, escape, jsonify
+from flask import Flask, session, escape, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.config.from_envvar('APPLICATION_SETTINGS')
 db = SQLAlchemy(app)
-
-app.secret_key = '\x03D5\x0e\x89\xa2\xf3s\x13\xfa\x8b\x7f\x82\x16\x87_\xaf\x9c\x18\xb2G\x89\xfa^'
 
 from DB.User import User
 from DB.Reservation import Reservation
@@ -36,13 +34,30 @@ def show_user(id):
         return jsonify({'error': 'notFound'})
 
 
-@app.route('/reservations')
+@app.route('/reservations', methods=["GET", "POST"])
+def reservations():
+    if request.method == "GET":
+        return show_reservations()
+    elif request.method == "POST":
+        for attribute in Reservation.get_required_attributes():
+            if not attribute in request.json:
+                return jsonify({'error': attribute + ' is required'}), 400
+        data = request.json
+        reservation = Reservation(data['title'], data['description'], data['start_date'], data['end_date'],
+                                  data['all_day'], data['user_id'])
+        db.session.add(reservation)
+        db.session.commit()
+        return jsonify({"id": reservation.id}), 201
+    else:
+        return jsonify({"error": "method not allowed"})
+
+
 def show_reservations():
-    reservations = Reservation.query.all()
-    reservatio_dict = []
-    for reservation in reservations:
-        reservatio_dict.append(reservation.to_dict())
-    return jsonify(reservatio_dict)
+    all_reservations = Reservation.query.all()
+    reservation_dict = []
+    for reservation in all_reservations:
+        reservation_dict.append(reservation.to_dict())
+    return jsonify(reservation_dict)
 
 
 @app.route('/reservations/<int:id>')
