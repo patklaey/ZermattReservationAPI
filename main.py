@@ -1,9 +1,11 @@
 from flask import Flask, session, escape, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 
 app = Flask(__name__)
 app.config.from_envvar('APPLICATION_SETTINGS')
 db = SQLAlchemy(app)
+CORS(app)
 
 from DB.User import User
 from DB.Reservation import Reservation
@@ -43,8 +45,8 @@ def reservations():
             if not attribute in request.json:
                 return jsonify({'error': attribute + ' is required'}), 400
         data = request.json
-        reservation = Reservation(data['title'], data['description'], data['start_date'], data['end_date'],
-                                  data['all_day'], data['user_id'])
+        reservation = Reservation(data['title'], data['description'], data['startTime'], data['endTime'],
+                                  data['allDay'], data['userId'])
         db.session.add(reservation)
         db.session.commit()
         return jsonify({"id": reservation.id}), 201
