@@ -2,15 +2,16 @@ from main import db
 
 
 class Reservation(db.Model):
+    __tablename__ = 'reservations'
     id = db.Column(db.Integer, primary_key=True)
     startTime = db.Column(db.DateTime)
     endTime = db.Column(db.DateTime)
     allDay = db.Column(db.Boolean)
     title = db.Column(db.String(80))
     description = db.Column(db.String(256))
-    userId = db.Column(db.Integer, db.ForeignKey('user.id'))
+    userId = db.Column(db.Integer, db.ForeignKey('users.id'))
 
-    def __init__(self, title, description, start_date, end_date, all_day, uesr_id):
+    def __init__(self, title, start_date, end_date, all_day, uesr_id, description=""):
         self.title = title
         self.description = description
         self.startTime = start_date
