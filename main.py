@@ -13,7 +13,7 @@ token_auth = HTTPTokenAuth('Bearer')
 multi_auth = MultiAuth(basic_auth, token_auth)
 
 from DB.User import User
-
+from endpoints import reservation, user
 
 @app.route('/')
 def index():
