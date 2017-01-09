@@ -4,7 +4,7 @@ from flask_cors import CORS
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth, MultiAuth
 
 app = Flask(__name__)
-app.config.from_envvar('APPLICATION_SETTINGS')
+app.config.from_pyfile('./config/config.py')
 db = SQLAlchemy(app)
 CORS(app)
 
