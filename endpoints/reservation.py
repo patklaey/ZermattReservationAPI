@@ -10,8 +10,12 @@ def post_reservations():
         if not attribute in request.json:
             return jsonify({'error': attribute + ' is required'}), 400
     data = request.json
-    reservation = Reservation(data['title'], data['startTime'], data['endTime'],
-                              data['allDay'], data['userId'], data['description'])
+    if 'description' in data:
+        reservation = Reservation(data['title'], data['startTime'], data['endTime'],
+                                  data['allDay'], data['userId'], data['description'])
+    else:
+        reservation = Reservation(data['title'], data['startTime'], data['endTime'],
+                                  data['allDay'], data['userId'])
     db.session.add(reservation)
     db.session.commit()
     return jsonify({"id": reservation.id}), 201
