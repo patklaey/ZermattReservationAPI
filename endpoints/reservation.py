@@ -19,7 +19,8 @@ def post_reservations():
                                   data['allDay'], userId)
     db.session.add(reservation)
     db.session.commit()
-    return jsonify({"id": reservation.id}), 201
+    reservationDict = reservation.to_dict()
+    return jsonify(reservationDict), 201
 
 
 @app.route('/reservations', methods=["GET"])
