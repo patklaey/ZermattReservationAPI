@@ -11,18 +11,19 @@ class User(db.Model):
     password_hash = db.Column(db.String(128))
     email = db.Column(db.String(120), unique=True)
     admin = db.Column(db.Boolean)
+    active = db.Column(db.Boolean)
 
-    def __init__(self, username, password, email, admin):
+    def __init__(self, username, password, email, admin=False, active=False):
         self.username = username
         self.email = email
         self.admin = admin
         self.hash_password(password)
+        self.active = active
 
     def to_dict(self):
         dict = self.__dict__
         del dict['_sa_instance_state']
         del dict['password_hash']
-        del dict['admin']
         return dict
 
     def hash_password(self, password):
@@ -46,3 +47,7 @@ class User(db.Model):
             return None  # invalid token
         user = User.query.get(data['id'])
         return user
+
+    @staticmethod
+    def get_required_attributes():
+        return ['username', 'password', 'email']

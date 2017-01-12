@@ -15,7 +15,7 @@ def initdb():
 
 @app.cli.command()
 def addadminuser():
-    admin = User('admin', 'admin', 'admin@247.ch', True)
+    admin = User('admin', 'admin', 'admin@247.ch', True, True)
     db.session.add(admin)
     db.session.commit()
     click.echo("Done")
@@ -25,7 +25,7 @@ def addadminuser():
 def addreservation():
     start = datetime.now()
     end = datetime.now()
-    hour = end.hour + 1;
+    hour = end.hour + 1
     end = end.replace(hour=hour)
     res = Reservation("Title", start, end, False, 1, "Description")
     db.session.add(res)

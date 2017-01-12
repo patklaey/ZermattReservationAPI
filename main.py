@@ -4,7 +4,7 @@ from flask_cors import CORS
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth, MultiAuth
 
 app = Flask(__name__)
-app.config.from_envvar('APPLICATION_SETTINGS')
+app.config.from_pyfile('./config/config.py')
 db = SQLAlchemy(app)
 CORS(app)
 
@@ -29,7 +29,7 @@ def get_auth_token():
 
 @basic_auth.verify_password
 def verify_password(username, password):
-    user = User.query.filter_by(username=username).first()
+    user = User.query.filter_by(username=username, active=True).first()
     if not user or not user.verify_password(password):
         return False
     g.user = user

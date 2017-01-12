@@ -1,4 +1,4 @@
-from flask import jsonify, request
+from flask import jsonify, request, g
 
 from main import app, db, multi_auth
 from DB.Reservation import Reservation
@@ -10,11 +10,17 @@ def post_reservations():
         if not attribute in request.json:
             return jsonify({'error': attribute + ' is required'}), 400
     data = request.json
-    reservation = Reservation(data['title'], data['startTime'], data['endTime'],
-                              data['allDay'], data['userId'], data['description'])
+    userId = g.user.id
+    if 'description' in data:
+        reservation = Reservation(data['title'], data['startTime'], data['endTime'],
+                                  data['allDay'], userId, data['description'])
+    else:
+        reservation = Reservation(data['title'], data['startTime'], data['endTime'],
+                                  data['allDay'], userId)
     db.session.add(reservation)
     db.session.commit()
-    return jsonify({"id": reservation.id}), 201
+    reservationDict = reservation.to_dict()
+    return jsonify(reservationDict), 201
 
 
 @app.route('/reservations', methods=["GET"])
