@@ -31,5 +31,4 @@ def add_user():
     new_user = User(data['username'], data['password'], data['email'])
     db.session.add(new_user)
     db.session.commit()
-    userDict = new_user.to_dict()
-    return jsonify(userDict), 201
+    return '', 201
