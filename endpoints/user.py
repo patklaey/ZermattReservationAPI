@@ -1,3 +1,5 @@
+import smtplib
+from email.mime.text import MIMEText
 from main import app, multi_auth, db
 from flask import jsonify, request
 from DB.User import User
@@ -31,5 +33,40 @@ def add_user():
     new_user = User(data['username'], data['password'], data['email'])
     db.session.add(new_user)
     db.session.commit()
+    send_new_user_mail(new_user)
     userDict = new_user.to_dict()
     return jsonify(userDict), 201
+
+
+def send_new_user_mail(user):
+    mail_host = app.config['MAIL_HOST']
+    mail_port = app.config['MAIL_PORT']
+    mail_user = app.config['MAIL_LOGIN_USER']
+    mail_pass = app.config['MAIL_LOGIN_PASS']
+    mailer = smtplib.SMTP_SSL(mail_host, mail_port)
+    mailer.login(mail_user, mail_pass)
+    send_new_user_information_mail(user, mailer)
+    send_new_user_activation_request(user, mailer)
+    mailer.quit()
+
+
+def send_new_user_information_mail(user, mailer):
+    mail_to = user.email
+    mail_from = app.config['MAIL_FROM']
+    mail_messaage = "Hello {}\n\nThank you for signing up, your account will be activated soon. You will get another mail confirming the account activation.".format(user.username)
+    message = MIMEText(mail_messaage)
+    message["Subject"] = "SignUp on zermatt.patklaey.ch"
+    message["From"] = mail_from
+    message["To"] = mail_to
+    mailer.sendmail(mail_from, mail_to, message.as_string())
+
+
+def send_new_user_activation_request(user, mailer):
+    mail_to = map(lambda admin_account: admin_account.email, User.get_admin_accounts())
+    mail_from = app.config['MAIL_FROM']
+    mail_messaage = "Hello admins\n\nA new user with username {} just signed up at zermatt.patklaey.ch. Please verify he is allowed to and activate it's account accordingly.".format(user.username)
+    message = MIMEText(mail_messaage)
+    message["Subject"] = "New user on zermatt.patklaey.ch"
+    message["From"] = mail_from
+    message["To"] = ", ".join(mail_to)
+    mailer.sendmail(mail_from, mail_to, message.as_string())
