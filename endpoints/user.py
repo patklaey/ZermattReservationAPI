@@ -38,6 +38,22 @@ def add_user():
     return jsonify(userDict), 201
 
 
+@app.route('/users/checkUnique', methods=["GET"])
+def check_unique_attribute():
+    arguments = request.args
+    possible_keys = ['username','email']
+    if not 'key' in arguments or not 'value' in arguments:
+        return jsonify({'error','"key" and "value" must be given as query parameters'}), 400
+    if not arguments['key'] in possible_keys:
+        return jsonify({'error','"key" can be one of the following: ' + ",".join(possible_keys)}), 400
+    kwargs = {arguments['key'] : arguments['value']}
+    user = User.query.filter_by(**kwargs).first()
+    if not user:
+        return jsonify({'unique':True}), 200
+    else:
+        return jsonify({'unique':False}), 200
+
+
 def send_new_user_mail(user):
     mail_host = app.config['MAIL_HOST']
     mail_port = app.config['MAIL_PORT']
