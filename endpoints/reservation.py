@@ -10,17 +10,16 @@ def post_reservations():
         if not attribute in request.json:
             return jsonify({'error': attribute + ' is required'}), 400
     data = request.json
-    userId = g.user.id
+    user_id = g.user.id
     if 'description' in data:
         reservation = Reservation(data['title'], data['startTime'], data['endTime'],
-                                  data['allDay'], userId, data['description'])
+                                  data['allDay'], user_id, data['description'])
     else:
         reservation = Reservation(data['title'], data['startTime'], data['endTime'],
-                                  data['allDay'], userId)
+                                  data['allDay'], user_id)
     db.session.add(reservation)
     db.session.commit()
-    reservationDict = reservation.to_dict()
-    return jsonify(reservationDict), 201
+    return jsonify({"id": reservation.id}), 201
 
 
 @app.route('/reservations', methods=["GET"])

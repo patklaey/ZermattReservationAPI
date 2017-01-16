@@ -34,8 +34,7 @@ def add_user():
     db.session.add(new_user)
     db.session.commit()
     send_new_user_mail(new_user)
-    userDict = new_user.to_dict()
-    return jsonify(userDict), 201
+    return '', 201
 
 
 @app.route('/users/checkUnique', methods=["GET"])
@@ -69,7 +68,8 @@ def send_new_user_mail(user):
 def send_new_user_information_mail(user, mailer):
     mail_to = user.email
     mail_from = app.config['MAIL_FROM']
-    mail_messaage = "Hello {}\n\nThank you for signing up, your account will be activated soon. You will get another mail confirming the account activation.".format(user.username)
+    mail_messaage = "Hello {}\n\nThank you for signing up, your account will be activated soon. You will get another mail confirming the account activation.".format(
+        user.username)
     message = MIMEText(mail_messaage)
     message["Subject"] = "SignUp on zermatt.patklaey.ch"
     message["From"] = mail_from
@@ -80,7 +80,8 @@ def send_new_user_information_mail(user, mailer):
 def send_new_user_activation_request(user, mailer):
     mail_to = map(lambda admin_account: admin_account.email, User.get_admin_accounts())
     mail_from = app.config['MAIL_FROM']
-    mail_messaage = "Hello admins\n\nA new user with username {} just signed up at zermatt.patklaey.ch. Please verify he is allowed to and activate it's account accordingly.".format(user.username)
+    mail_messaage = "Hello admins\n\nA new user with username {} just signed up at zermatt.patklaey.ch. Please verify he is allowed to and activate it's account accordingly.".format(
+        user.username)
     message = MIMEText(mail_messaage)
     message["Subject"] = "New user on zermatt.patklaey.ch"
     message["From"] = mail_from
