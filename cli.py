@@ -15,7 +15,7 @@ def initdb():
 
 @app.cli.command()
 def addadminuser():
-    admin = User('admin', 'admin', 'admin@247.ch', True, True)
+    admin = User('admin', 'admin', 'kly7@247.ch', True, True)
     db.session.add(admin)
     db.session.commit()
     click.echo("Done")
