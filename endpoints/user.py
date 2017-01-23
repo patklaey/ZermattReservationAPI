@@ -21,7 +21,7 @@ def show_user(id):
     if user is not None:
         return jsonify(user.to_dict())
     else:
-        return jsonify({'error': 'notFound'})
+        return jsonify({'error': 'User not found'})
 
 
 @app.route('/users', methods=["POST"])

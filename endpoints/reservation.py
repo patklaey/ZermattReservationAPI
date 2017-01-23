@@ -38,4 +38,4 @@ def show_reservation(id):
     if reservation is not None:
         return jsonify(reservation.to_dict())
     else:
-        return jsonify({'error': 'notFound'})
+        return jsonify({'error': 'Event not found'})
