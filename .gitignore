@@ -92,3 +92,4 @@ ENV/
 .ropeproject
 /run.sh
 /restage.sh
+/config/config.py
