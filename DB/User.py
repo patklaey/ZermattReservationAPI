@@ -1,4 +1,4 @@
-from main import db
+from main import db, jwt, g
 from passlib.apps import custom_app_context as pwd_context
 from flask_jwt_extended import create_access_token
 
@@ -34,6 +34,12 @@ class User(db.Model):
         token = create_access_token(identity=self.id)
         return token
 
+    @jwt.user_claims_loader
+    def add_claims_to_access_token(user_id):
+        return {
+            'admin': g.user.admin,
+            'username': g.user.username
+        }
 
     @staticmethod
     def get_required_attributes():
