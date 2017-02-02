@@ -2,12 +2,12 @@ from flask import Flask, jsonify, g
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_httpauth import HTTPBasicAuth
-from flask_jwt_extended import JWTManager
+from flask_jwt_extended import JWTManager, set_access_cookies
 
 app = Flask(__name__)
 app.config.from_pyfile('./config/config.py')
 db = SQLAlchemy(app)
-CORS(app)
+CORS(app, supports_credentials=True)
 
 basic_auth = HTTPBasicAuth()
 jwt = JWTManager(app)
@@ -24,7 +24,9 @@ def index():
 @basic_auth.login_required
 def get_auth_token():
     token = g.user.generate_auth_token()
-    return jsonify({'token': token}), 200
+    response = jsonify({'token': token})
+    set_access_cookies(response, token)
+    return response, 200
 
 
 @basic_auth.verify_password
