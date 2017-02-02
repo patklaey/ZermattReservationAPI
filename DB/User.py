@@ -45,6 +45,12 @@ class User(db.Model):
     def get_required_attributes():
         return ['username', 'password', 'email']
 
+
+    @staticmethod
+    def get_required_attributes():
+        return ['username', 'password', 'email', 'admin', 'active']
+
+
     @staticmethod
     def get_admin_accounts():
         return User.query.filter_by(admin=True).all()
