@@ -1,8 +1,6 @@
-from main import db, app
+from main import db, jwt, g
 from passlib.apps import custom_app_context as pwd_context
-from itsdangerous import (TimedJSONWebSignatureSerializer
-                          as Serializer, BadSignature, SignatureExpired)
-
+from flask_jwt_extended import create_access_token
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -32,21 +30,16 @@ class User(db.Model):
     def verify_password(self, password):
         return pwd_context.verify(password, self.password_hash)
 
-    def generate_auth_token(self, expiration=600):
-        s = Serializer(app.config['SECRET_KEY'], expires_in=expiration)
-        return s.dumps({'id': self.id, "admin": self.admin, "username": self.username})
+    def generate_auth_token(self):
+        token = create_access_token(identity=self.id)
+        return token
 
-    @staticmethod
-    def verify_auth_token(token):
-        s = Serializer(app.config['SECRET_KEY'])
-        try:
-            data = s.loads(token)
-        except SignatureExpired:
-            return None  # valid token, but expired
-        except BadSignature:
-            return None  # invalid token
-        user = User.query.get(data['id'])
-        return user
+    @jwt.user_claims_loader
+    def add_claims_to_access_token(user_id):
+        return {
+            'admin': g.user.admin,
+            'username': g.user.username
+        }
 
     @staticmethod
     def get_required_attributes():

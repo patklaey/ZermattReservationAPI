@@ -1,16 +1,18 @@
 from flask import jsonify, request, g
 
-from main import app, db, multi_auth
+from main import app, db
 from DB.Reservation import Reservation
 
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
 @app.route('/reservations', methods=["POST"])
-@multi_auth.login_required
+@jwt_required
 def post_reservations():
     for attribute in Reservation.get_required_attributes():
         if not attribute in request.json:
             return jsonify({'error': attribute + ' is required'}), 400
     data = request.json
-    user_id = g.user.id
+    user_id = get_jwt_identity()
     if 'description' in data:
         reservation = Reservation(data['title'], data['startTime'], data['endTime'],
                                   data['allDay'], user_id, data['description'])
@@ -32,10 +34,10 @@ def get_reservations():
 
 
 @app.route('/reservations/<int:id>')
-@multi_auth.login_required
+@jwt_required
 def show_reservation(id):
     reservation = Reservation.query.get(id)
     if reservation is not None:
         return jsonify(reservation.to_dict())
     else:
-        return jsonify({'error': 'notFound'})
+        return jsonify({'error': 'Event not found'})

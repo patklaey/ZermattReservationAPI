@@ -1,11 +1,12 @@
 import smtplib
 from email.mime.text import MIMEText
-from main import app, multi_auth, db
+from main import app, db
 from flask import jsonify, request
 from DB.User import User
+from flask_jwt_extended import jwt_required
 
 @app.route('/users')
-@multi_auth.login_required
+@jwt_required
 def show_users():
     users = User.query.all()
     userDict = []
@@ -15,13 +16,13 @@ def show_users():
 
 
 @app.route('/users/<int:id>')
-@multi_auth.login_required
+@jwt_required
 def show_user(id):
     user = User.query.get(id)
     if user is not None:
         return jsonify(user.to_dict())
     else:
-        return jsonify({'error': 'notFound'})
+        return jsonify({'error': 'User not found'})
 
 
 @app.route('/users', methods=["POST"])
