@@ -1,7 +1,7 @@
 import smtplib
 from email.mime.text import MIMEText
 from main import app, db
-from flask import jsonify, request
+from flask import jsonify, request, g
 from DB.User import User
 from flask_jwt_extended import jwt_required
 
@@ -15,7 +15,7 @@ def show_users():
     return jsonify(userDict)
 
 
-@app.route('/users/<int:id>')
+@app.route('/users/<int:id>', methods=["GET"])
 @jwt_required
 def show_user(id):
     user = User.query.get(id)
@@ -23,6 +23,23 @@ def show_user(id):
         return jsonify(user.to_dict())
     else:
         return jsonify({'error': 'User not found'})
+
+
+@app.route('/users/<int:id>', methods=["PUT","PATCH"])
+@jwt_required
+def edit_user(id):
+    if not g.user.admin:
+        return jsonify({'error': 'Operation not permitted'}), 403
+
+    user = User.query.get(id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    for attribute in User.get_all_attributes():
+        if attribute in request.data:
+            user[attribute] = request.data[attribute]
+    db.session.commit()
+    return '', 200
 
 
 @app.route('/users', methods=["POST"])
