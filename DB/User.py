@@ -47,7 +47,7 @@ class User(db.Model):
 
 
     @staticmethod
-    def get_required_attributes():
+    def get_all_attributes():
         return ['username', 'password', 'email', 'admin', 'active']
 
 

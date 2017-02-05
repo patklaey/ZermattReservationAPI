@@ -3,11 +3,15 @@ from email.mime.text import MIMEText
 from main import app, db
 from flask import jsonify, request, g
 from DB.User import User
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 @app.route('/users')
 @jwt_required
 def show_users():
+    user_id = get_jwt_identity()
+    current_user = User.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return jsonify({"error": "Operation not permitted"}), 403
     users = User.query.all()
     userDict = []
     for user in users:
