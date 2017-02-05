@@ -32,7 +32,9 @@ def show_user(id):
 @app.route('/users/<int:id>', methods=["PUT","PATCH"])
 @jwt_required
 def edit_user(id):
-    if not g.user.admin:
+    user_id = get_jwt_identity()
+    current_user = User.query.get(user_id)
+    if not current_user.admin:
         return jsonify({'error': 'Operation not permitted'}), 403
 
     user = User.query.get(id)
