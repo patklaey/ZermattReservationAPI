@@ -42,6 +42,9 @@ def edit_user(id):
         return jsonify({'error': 'User not found'}), 404
 
     try:
+        if "password" in request.json:
+            user.hash_password(request.json["password"])
+            del request.json["password"]
         for attribute in request.json:
             if attribute in User.get_all_attributes():
                 setattr(user, attribute, request.json[attribute])
