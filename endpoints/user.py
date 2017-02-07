@@ -29,15 +29,15 @@ def show_user(id):
         return jsonify({'error': 'User not found'})
 
 
-@app.route('/users/<int:id>', methods=["PUT","PATCH"])
+@app.route('/users/<int:user_id>', methods=["PUT", "PATCH"])
 @jwt_required
-def edit_user(id):
-    user_id = get_jwt_identity()
-    current_user = User.query.get(user_id)
+def edit_user(user_id):
+    user_id_from_token = get_jwt_identity()
+    current_user = User.query.get(user_id_from_token)
     if not current_user.admin:
         return jsonify({'error': 'Operation not permitted'}), 403
 
-    user = User.query.get(id)
+    user = User.query.get(user_id)
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
