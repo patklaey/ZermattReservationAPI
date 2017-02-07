@@ -42,14 +42,14 @@ def edit_user(id):
         return jsonify({'error': 'User not found'}), 404
 
     try:
-        for attribute in request.data:
+        for attribute in request.json:
             if attribute in User.get_all_attributes():
-                setattr(user, attribute, getattr(request.data, attribute))
+                setattr(user, attribute, request.json[attribute])
         db.session.commit()
         return '', 200
-    except:
+    except Exception as error:
         db.session.rollback()
-        return jsonify({"error": "Failed to update user"}), 500
+        return jsonify({"error": "Failed to update user: " + str(error)}), 500
 
 
 @app.route('/users', methods=["POST"])
