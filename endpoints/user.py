@@ -41,9 +41,9 @@ def edit_user(id):
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
-    for attribute in User.get_all_attributes():
-        if attribute in request.data:
-            user[attribute] = request.data[attribute]
+    for attribute in request.data:
+        if attribute in User.get_all_attributes():
+            setattr(user, attribute, getattr(request.data, attribute))
     db.session.commit()
     return '', 200
 
