@@ -2,7 +2,7 @@ from flask import Flask, jsonify, g
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_httpauth import HTTPBasicAuth
-from flask_jwt_extended import JWTManager, set_access_cookies
+from flask_jwt_extended import JWTManager, set_access_cookies, jwt_required, unset_jwt_cookies
 
 app = Flask(__name__)
 app.config.from_pyfile('./config/config.py')
@@ -36,3 +36,11 @@ def verify_password(username, password):
         return False
     g.user = user
     return True
+
+
+@app.route('/logout', methods=['POST'])
+@jwt_required
+def logout():
+    resp = jsonify({'logout': True})
+    unset_jwt_cookies(resp)
+    return resp, 200
