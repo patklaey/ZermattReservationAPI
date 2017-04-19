@@ -38,7 +38,8 @@ class User(db.Model):
     def add_claims_to_access_token(user_id):
         return {
             'admin': g.user.admin,
-            'username': g.user.username
+            'username': g.user.username,
+            'userId': user_id
         }
 
     @staticmethod
