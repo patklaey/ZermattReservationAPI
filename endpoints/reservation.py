@@ -1,5 +1,6 @@
-from flask import jsonify, request, g
+from flask import jsonify, request
 
+from DB.User import User
 from main import app, db
 from DB.Reservation import Reservation
 
@@ -19,9 +20,14 @@ def post_reservations():
     else:
         reservation = Reservation(data['title'], data['startTime'], data['endTime'],
                                   data['allDay'], user_id)
-    db.session.add(reservation)
-    db.session.commit()
-    return jsonify({"id": reservation.id}), 201
+
+    try:
+        db.session.add(reservation)
+        db.session.commit()
+        return jsonify({"id": reservation.id}), 201
+    except Exception as error:
+        db.session.rollback()
+        return jsonify({"error": "Failed to add reservation: " + str(error)}), 500
 
 
 @app.route('/reservations', methods=["GET"])
@@ -33,7 +39,7 @@ def get_reservations():
     return jsonify(reservation_dict)
 
 
-@app.route('/reservations/<int:id>')
+@app.route('/reservations/<int:id>', methods=["GET"])
 @jwt_required
 def show_reservation(id):
     reservation = Reservation.query.get(id)
@@ -41,3 +47,27 @@ def show_reservation(id):
         return jsonify(reservation.to_dict())
     else:
         return jsonify({'error': 'Event not found'})
+
+
+@app.route('/reservations/<int:id>', methods=["PUT", "PATCH"])
+@jwt_required
+def update_reservation(id):
+    user_id_from_token = get_jwt_identity()
+    current_user = User.query.get(user_id_from_token)
+    reservation = Reservation.query.get(id)
+
+    if not reservation:
+        return jsonify({'error': 'Reservation with id ' + id + ' not found'}), 404
+
+    if not current_user.admin or reservation.userId != user_id_from_token:
+        return jsonify({'error': 'Operation not permitted'}), 403
+
+    try:
+        for attribute in request.json:
+            if attribute in Reservation.get_all_attributes():
+                setattr(reservation, attribute, request.json[attribute])
+        db.session.commit()
+        return '', 200
+    except Exception as error:
+        db.session.rollback()
+        return jsonify({"error": "Failed to update reservation: " + str(error)}), 500

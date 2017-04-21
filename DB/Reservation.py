@@ -27,3 +27,7 @@ class Reservation(db.Model):
     @staticmethod
     def get_required_attributes():
         return ['title', 'startTime', 'endTime', 'allDay']
+
+    @staticmethod
+    def get_all_attributes():
+        return ['title', 'startTime', 'endTime', 'allDay', 'description']
