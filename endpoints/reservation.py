@@ -3,6 +3,7 @@ from flask import jsonify, request
 from DB.User import User
 from main import app, db
 from DB.Reservation import Reservation
+from dateutil.parser import parse
 
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
@@ -14,12 +15,13 @@ def post_reservations():
             return jsonify({'error': attribute + ' is required'}), 400
     data = request.json
     user_id = get_jwt_identity()
+    start_date = parse(data['startTime'])
+    end_date = parse(data['endTime'])
+    description = ""
     if 'description' in data:
-        reservation = Reservation(data['title'], data['startTime'], data['endTime'],
-                                  data['allDay'], user_id, data['description'])
-    else:
-        reservation = Reservation(data['title'], data['startTime'], data['endTime'],
-                                  data['allDay'], user_id)
+        description = data['description']
+
+    reservation = Reservation(data['title'], start_date, end_date, data['allDay'], user_id, description)
 
     try:
         db.session.add(reservation)
