@@ -15,8 +15,16 @@ def post_reservations():
             return jsonify({'error': attribute + ' is required'}), 400
     data = request.json
     user_id = get_jwt_identity()
-    start_date = parse(data['startTime'])
-    end_date = parse(data['endTime'])
+
+    try:
+        start_date = parse(data['startTime'])
+    except ValueError:
+        return jsonify({"error" : "Invalid date format for startTime"}), 400
+    try:
+        end_date = parse(data['endTime'])
+    except ValueError:
+        return jsonify({"error" : "Invalid date format for endTime"}), 400
+
     description = ""
     if 'description' in data:
         description = data['description']
@@ -67,7 +75,13 @@ def update_reservation(id):
     try:
         for attribute in request.json:
             if attribute in Reservation.get_all_attributes():
-                setattr(reservation, attribute, request.json[attribute])
+                if attribute == "endTime" or attribute == "startTime":
+                    try:
+                        setattr(reservation, attribute, parse(request.json[attribute]))
+                    except ValueError:
+                        return jsonify({"error" : "Invalid date format for " + attribute}), 400
+                else:
+                    setattr(reservation, attribute, request.json[attribute])
         db.session.commit()
         return '', 200
     except Exception as error:
