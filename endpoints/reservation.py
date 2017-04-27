@@ -16,12 +16,16 @@ def post_reservations():
     data = request.json
     user_id = get_jwt_identity()
 
+    print request.json
+
     try:
         start_date = parse(data['startTime'])
+        print start_date
     except ValueError:
         return jsonify({"error" : "Invalid date format for startTime"}), 400
     try:
         end_date = parse(data['endTime'])
+        print end_date
     except ValueError:
         return jsonify({"error" : "Invalid date format for endTime"}), 400
 
@@ -37,7 +41,8 @@ def post_reservations():
         return jsonify({"id": reservation.id}), 201
     except Exception as error:
         db.session.rollback()
-        return jsonify({"error": "Failed to add reservation: " + str(error)}), 500
+        # Log error
+        return jsonify({"error": "Failed to add reservation"}), 500
 
 
 @app.route('/reservations', methods=["GET"])
@@ -66,6 +71,9 @@ def update_reservation(id):
     current_user = User.query.get(user_id_from_token)
     reservation = Reservation.query.get(id)
 
+    print reservation.startTime
+    print request.json
+
     if not reservation:
         return jsonify({'error': 'Reservation with id ' + id + ' not found'}), 404
 
@@ -77,7 +85,9 @@ def update_reservation(id):
             if attribute in Reservation.get_all_attributes():
                 if attribute == "endTime" or attribute == "startTime":
                     try:
-                        setattr(reservation, attribute, parse(request.json[attribute]))
+                        date_value = parse(request.json[attribute])
+                        print date_value
+                        setattr(reservation, attribute, date_value)
                     except ValueError:
                         return jsonify({"error" : "Invalid date format for " + attribute}), 400
                 else:
@@ -86,4 +96,6 @@ def update_reservation(id):
         return '', 200
     except Exception as error:
         db.session.rollback()
-        return jsonify({"error": "Failed to update reservation: " + str(error)}), 500
+        # Log erro
+        print error
+        return jsonify({"error": "Failed to update reservation"}), 500
