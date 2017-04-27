@@ -16,16 +16,12 @@ def post_reservations():
     data = request.json
     user_id = get_jwt_identity()
 
-    print request.json
-
     try:
         start_date = parse(data['startTime'])
-        print start_date
     except ValueError:
         return jsonify({"error" : "Invalid date format for startTime"}), 400
     try:
         end_date = parse(data['endTime'])
-        print end_date
     except ValueError:
         return jsonify({"error" : "Invalid date format for endTime"}), 400
 
@@ -71,9 +67,6 @@ def update_reservation(id):
     current_user = User.query.get(user_id_from_token)
     reservation = Reservation.query.get(id)
 
-    print reservation.startTime
-    print request.json
-
     if not reservation:
         return jsonify({'error': 'Reservation with id ' + id + ' not found'}), 404
 
@@ -86,7 +79,6 @@ def update_reservation(id):
                 if attribute == "endTime" or attribute == "startTime":
                     try:
                         date_value = parse(request.json[attribute])
-                        print date_value
                         setattr(reservation, attribute, date_value)
                     except ValueError:
                         return jsonify({"error" : "Invalid date format for " + attribute}), 400
