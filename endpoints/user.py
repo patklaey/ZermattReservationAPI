@@ -67,6 +67,27 @@ def add_user():
     send_new_user_mail(new_user)
     return '', 201
 
+@app.route('/users/<int:user_id>', methods=["DELETE"])
+@jwt_required
+def delete_user(user_id):
+    user_id_from_token = get_jwt_identity()
+    current_user = User.query.get(user_id_from_token)
+    if not current_user.admin:
+        return jsonify({'error': 'Operation not permitted'}), 403
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    try:
+        db.session.delete(user)
+        db.session.commit()
+        return '', 204
+    except Exception as error:
+        # Log error
+        print error
+        return jsonify({"error": "Cannot delete user"}), 500
+
 
 @app.route('/users/checkUnique', methods=["GET"])
 def check_unique_attribute():
