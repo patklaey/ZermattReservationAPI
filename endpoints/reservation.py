@@ -1,10 +1,10 @@
 from flask import jsonify, request
-
 from DB.User import User
 from main import app, db
 from DB.Reservation import Reservation
 from dateutil.parser import parse
 from flask_jwt_extended import jwt_required, get_jwt_identity
+import pytz
 
 @app.route('/reservations', methods=["GET"])
 def get_reservations():
@@ -87,6 +87,11 @@ def update_reservation(id):
                 if attribute == "endTime" or attribute == "startTime":
                     try:
                         date_value = parse(request.json[attribute])
+
+                        if date_value.tzinfo is None or date_value.tzinfo.utcoffset(date_value) is None:
+                            date_value = pytz.utc.localize(date_value)
+                        elif date_value.tzinfo != pytz.utc:
+                            date_value = date_value.replace(tzinfo=date_value.tzinfo).astimezone(pytz.utc)
 
                         setattr(reservation, attribute, date_value)
                     except ValueError:
