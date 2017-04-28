@@ -38,6 +38,7 @@ def post_reservations():
         start_date = parse(data['startTime'])
     except ValueError:
         return jsonify({"error" : "Invalid date format for startTime"}), 400
+
     try:
         end_date = parse(data['endTime'])
     except ValueError:
@@ -47,7 +48,15 @@ def post_reservations():
     if 'description' in data:
         description = data['description']
 
-    reservation = Reservation(data['title'], start_date, end_date, data['allDay'], user_id, description)
+    try:
+        reservation = Reservation(data['title'], start_date, end_date, data['allDay'], user_id, description)
+    except ValueError as error:
+        if error.message == Reservation.END_BEFORE_START_ERROR_MESSAGE:
+            return jsonify({"error" : "Start date cannot be after end date"}), 409
+        else:
+            # Log error
+            print error
+            return jsonify({"error" : "Cannot create reservation"}), 400
 
     try:
         db.session.add(reservation)
@@ -78,6 +87,7 @@ def update_reservation(id):
                 if attribute == "endTime" or attribute == "startTime":
                     try:
                         date_value = parse(request.json[attribute])
+
                         setattr(reservation, attribute, date_value)
                     except ValueError:
                         return jsonify({"error" : "Invalid date format for " + attribute}), 400

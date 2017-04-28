@@ -3,7 +3,9 @@ from datetime import datetime
 import pytz
 from sqlalchemy import orm
 
+
 class Reservation(db.Model):
+    END_BEFORE_START_ERROR_MESSAGE = "End date cannot be before start date"
     __tablename__ = 'reservations'
     id = db.Column(db.Integer, primary_key=True)
     startTime = db.Column(db.DateTime)
@@ -27,9 +29,16 @@ class Reservation(db.Model):
 
         if start_date.tzinfo is None or start_date.tzinfo.utcoffset(start_date) is None:
             start_date = pytz.utc.localize(start_date)
+        elif start_date.tzinfo != pytz.utc:
+            start_date = start_date.replace(tzinfo=start_date.tzinfo).astimezone(pytz.utc)
 
         if end_date.tzinfo is None or end_date.tzinfo.utcoffset(end_date) is None:
             end_date = pytz.utc.localize(end_date)
+        elif end_date.tzinfo != pytz.utc:
+            end_date = end_date.replace(tzinfo=end_date.tzinfo).astimezone(pytz.utc)
+
+        if end_date < start_date:
+            raise ValueError(Reservation.END_BEFORE_START_ERROR_MESSAGE)
             
         self.startTime = start_date
         self.endTime = end_date
