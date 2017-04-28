@@ -4,8 +4,26 @@ from DB.User import User
 from main import app, db
 from DB.Reservation import Reservation
 from dateutil.parser import parse
-
 from flask_jwt_extended import jwt_required, get_jwt_identity
+
+@app.route('/reservations', methods=["GET"])
+def get_reservations():
+    all_reservations = Reservation.query.all()
+    reservation_dict = []
+    for reservation in all_reservations:
+        reservation_dict.append(reservation.to_dict())
+    return jsonify(reservation_dict)
+
+
+@app.route('/reservations/<int:id>', methods=["GET"])
+@jwt_required
+def show_reservation(id):
+    reservation = Reservation.query.get(id)
+    if reservation is not None:
+        return jsonify(reservation.to_dict())
+    else:
+        return jsonify({'error': 'Event not found'})
+
 
 @app.route('/reservations', methods=["POST"])
 @jwt_required
@@ -41,25 +59,6 @@ def post_reservations():
         return jsonify({"error": "Failed to add reservation"}), 500
 
 
-@app.route('/reservations', methods=["GET"])
-def get_reservations():
-    all_reservations = Reservation.query.all()
-    reservation_dict = []
-    for reservation in all_reservations:
-        reservation_dict.append(reservation.to_dict())
-    return jsonify(reservation_dict)
-
-
-@app.route('/reservations/<int:id>', methods=["GET"])
-@jwt_required
-def show_reservation(id):
-    reservation = Reservation.query.get(id)
-    if reservation is not None:
-        return jsonify(reservation.to_dict())
-    else:
-        return jsonify({'error': 'Event not found'})
-
-
 @app.route('/reservations/<int:id>', methods=["PUT", "PATCH"])
 @jwt_required
 def update_reservation(id):
@@ -67,11 +66,11 @@ def update_reservation(id):
     current_user = User.query.get(user_id_from_token)
     reservation = Reservation.query.get(id)
 
-    if not reservation:
-        return jsonify({'error': 'Reservation with id ' + id + ' not found'}), 404
-
     if not current_user.admin or reservation.userId != user_id_from_token:
         return jsonify({'error': 'Operation not permitted'}), 403
+
+    if not reservation:
+        return jsonify({'error': 'Reservation with id ' + id + ' not found'}), 404
 
     try:
         for attribute in request.json:
@@ -85,9 +84,33 @@ def update_reservation(id):
                 else:
                     setattr(reservation, attribute, request.json[attribute])
         db.session.commit()
-        return '', 200
+        return '', 204
     except Exception as error:
         db.session.rollback()
         # Log erro
         print error
         return jsonify({"error": "Failed to update reservation"}), 500
+
+
+@app.route('/reservations/<int:id>', methods=["DELETE"])
+@jwt_required
+def remove_reservation(id):
+    user_id_from_token = get_jwt_identity()
+    current_user = User.query.get(user_id_from_token)
+    reservation = Reservation.query.get(id)
+
+    if not current_user.admin or reservation.userId != user_id_from_token:
+        return jsonify({'error': 'Operation not permitted'}), 403
+
+    if not reservation:
+        return jsonify({'error': 'Reservation with id ' + id + ' not found'}), 404
+
+    try:
+        db.session.delete(reservation)
+        db.session.commit()
+        return '', 204
+    except Exception as error:
+        db.session.rollback()
+        print error
+        return jsonify({"error": "Failed to delete reservation"}), 500
+
