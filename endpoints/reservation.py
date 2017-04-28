@@ -81,6 +81,12 @@ def update_reservation(id):
     if not reservation:
         return jsonify({'error': 'Reservation with id ' + id + ' not found'}), 404
 
+    if 'endTime' in request.json and 'startTime' in request.json:
+        start_time = parse(request.json["startTime"])
+        end_time = parse(request.json["endTime"])
+        if end_time < start_time:
+            return jsonify({"error" : Reservation.END_BEFORE_START_ERROR_MESSAGE}), 409
+
     try:
         for attribute in request.json:
             if attribute in Reservation.get_all_attributes():
@@ -92,6 +98,14 @@ def update_reservation(id):
                             date_value = pytz.utc.localize(date_value)
                         elif date_value.tzinfo != pytz.utc:
                             date_value = date_value.replace(tzinfo=date_value.tzinfo).astimezone(pytz.utc)
+
+                        if attribute == "endTime" and not 'startTime' in request.json:
+                            if date_value < reservation.startTime:
+                                return jsonify({"error" : Reservation.END_BEFORE_START_ERROR_MESSAGE}), 409
+
+                        if attribute == "startTime" and not 'endTime' in request.json:
+                            if reservation.endTime < date_value:
+                                return jsonify({"error" : Reservation.END_BEFORE_START_ERROR_MESSAGE}), 409
 
                         setattr(reservation, attribute, date_value)
                     except ValueError:
