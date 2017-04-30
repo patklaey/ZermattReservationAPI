@@ -30,7 +30,7 @@ def show_reservation(id):
 def post_reservations():
     for attribute in Reservation.get_required_attributes():
         if not attribute in request.json:
-            return jsonify({'error': attribute + ' is required'}), 400
+            return jsonify({'error': '\'' + attribute + '\' is required'}), 400
     data = request.json
     user_id = get_jwt_identity()
 
