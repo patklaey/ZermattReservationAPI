@@ -75,7 +75,7 @@ def update_reservation(id):
     current_user = User.query.get(user_id_from_token)
     reservation = Reservation.query.get(id)
 
-    if not current_user.admin or reservation.userId != user_id_from_token:
+    if not current_user.admin and reservation.userId != user_id_from_token:
         return jsonify({'error': 'Operation not permitted'}), 403
 
     if not reservation:
@@ -128,7 +128,7 @@ def remove_reservation(id):
     current_user = User.query.get(user_id_from_token)
     reservation = Reservation.query.get(id)
 
-    if not current_user.admin or reservation.userId != user_id_from_token:
+    if not current_user.admin and reservation.userId != user_id_from_token:
         return jsonify({'error': 'Operation not permitted'}), 403
 
     if not reservation:
