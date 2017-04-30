@@ -44,7 +44,6 @@ def verify_password(username, password):
 
 
 @app.route('/logout', methods=['POST'])
-@jwt_required
 def logout():
     resp = jsonify({'logout': True})
     unset_jwt_cookies(resp)
