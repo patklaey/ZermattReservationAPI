@@ -61,7 +61,7 @@ def post_reservations():
     try:
         db.session.add(reservation)
         db.session.commit()
-        return jsonify({"id": reservation.id}), 201
+        return jsonify({"id": reservation.id, "userId": user_id}), 201
     except Exception as error:
         db.session.rollback()
         # Log error
