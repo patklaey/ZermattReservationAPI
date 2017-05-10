@@ -48,6 +48,11 @@ def post_reservations():
     if 'description' in data:
         description = data['description']
 
+    all_current_events = Reservation.query.all()
+    if is_overlapping(start_date, end_date, all_current_events):
+        return jsonify({"error": "Overlapping dates"}), 409
+
+
     try:
         reservation = Reservation(data['title'], start_date, end_date, data['allDay'], user_id, description)
     except ValueError as error:
@@ -143,3 +148,24 @@ def remove_reservation(id):
         print error
         return jsonify({"error": "Failed to delete reservation"}), 500
 
+
+def is_overlapping(start_date, end_date, all_events):
+    for event in all_events:
+        if overlaps_with_event(start_date, end_date, event) or wraps_event(start_date, end_date, event):
+            return True
+
+    return False
+
+
+def overlaps_with_event(start_date, end_date, event):
+    if start_date > event.startTime and start_date < event.endTime:
+        return True
+    if end_date > event.startTime and end_date < event.endTime:
+        return True
+    return False
+
+
+def wraps_event(start_date, end_date, event):
+    if start_date < event.startTime and end_date > event.endTime:
+        return True
+    return False
