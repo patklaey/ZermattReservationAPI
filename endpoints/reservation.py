@@ -162,6 +162,8 @@ def overlaps_with_event(start_date, end_date, event):
         return True
     if end_date > event.startTime and end_date < event.endTime:
         return True
+    if start_date == event.startTime or end_date == event.endTime:
+        return True
     return False
 
 
