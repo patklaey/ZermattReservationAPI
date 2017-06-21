@@ -11,7 +11,7 @@ def show_users():
     user_id = get_jwt_identity()
     current_user = User.query.get(user_id)
     if not current_user or not current_user.admin:
-        return jsonify({"error": "Operation not permitted"}), 403
+        return jsonify({"error": { 'msg' : 'Operation not permitted', 'code' : 14 }}), 403
     users = User.query.all()
     userDict = []
     for user in users:
@@ -26,7 +26,7 @@ def show_user(id):
     if user is not None:
         return jsonify(user.to_dict())
     else:
-        return jsonify({'error': 'User not found'})
+        return jsonify({'error': { 'msg' : 'User not found', 'code' : 16, 'info' : id }}), 404
 
 
 @app.route('/users/<int:user_id>', methods=["PUT", "PATCH"])
@@ -35,11 +35,10 @@ def edit_user(user_id):
     user_id_from_token = get_jwt_identity()
     current_user = User.query.get(user_id_from_token)
     if not current_user.admin:
-        return jsonify({'error': 'Operation not permitted'}), 403
-
+        return jsonify({'error': { 'msg' : 'Operation not permitted', 'code' : 14 }}), 403
     user = User.query.get(user_id)
     if not user:
-        return jsonify({'error': 'User not found'}), 404
+        return jsonify({'error': { 'msg' : 'User not found', 'code' : 16, 'info' : user_id }}), 404
 
     try:
         if "password" in request.json:
@@ -52,14 +51,14 @@ def edit_user(user_id):
         return '', 200
     except Exception as error:
         db.session.rollback()
-        return jsonify({"error": "Failed to update user: " + str(error)}), 500
+        return jsonify({"error": { 'msg' : "Failed to update user", 'code' : 17 }}), 500
 
 
 @app.route('/users', methods=["POST"])
 def add_user():
     for attribute in User.get_required_attributes():
         if not attribute in request.json:
-            return jsonify({'error': attribute + ' is required'}), 400
+            return jsonify({'error': {'msg' : '\'' + attribute + '\' is required', 'code' : 2, 'info' : attribute}}), 400
     data = request.json
     new_user = User(data['username'], data['password'], data['email'])
     db.session.add(new_user)
@@ -73,11 +72,11 @@ def delete_user(user_id):
     user_id_from_token = get_jwt_identity()
     current_user = User.query.get(user_id_from_token)
     if not current_user.admin:
-        return jsonify({'error': 'Operation not permitted'}), 403
+        return jsonify({'error': { 'msg' : 'Operation not permitted', 'code' : 14 }}), 403
 
     user = User.query.get(user_id)
     if not user:
-        return jsonify({'error': 'User not found'}), 404
+        return jsonify({'error': { 'msg' : 'User not found', 'code' : 16, 'info' : id }}), 404
 
     try:
         db.session.delete(user)
@@ -86,7 +85,7 @@ def delete_user(user_id):
     except Exception as error:
         # Log error
         print error
-        return jsonify({"error": "Cannot delete user"}), 500
+        return jsonify({"error": { 'msg' : "Cannot delete user", 'code' : 18 }}), 500
 
 
 @app.route('/users/checkUnique', methods=["GET"])
@@ -94,9 +93,9 @@ def check_unique_attribute():
     arguments = request.args
     possible_keys = ['username','email']
     if not 'key' in arguments or not 'value' in arguments:
-        return jsonify({'error':'"key" and "value" must be given as query parameters'}), 400
+        return jsonify({'error' : { 'msg' : '"key" and "value" must be given as query parameters', 'code' : 19 }}), 400
     if not arguments['key'] in possible_keys:
-        return jsonify({'error':'"key" can be one of the following: ' + ",".join(possible_keys)}), 400
+        return jsonify({'error' : { 'msg' : '"key" can be one of the following: ' + ",".join(possible_keys), 'code' : 20, 'info' : ",".join(possible_keys) }}), 400
     kwargs = {arguments['key'] : arguments['value']}
     user = User.query.filter_by(**kwargs).first()
     if not user:
