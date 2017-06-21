@@ -26,7 +26,7 @@ def show_user(id):
     if user is not None:
         return jsonify(user.to_dict())
     else:
-        return jsonify({'error': { 'msg' : 'User not found', 'code' : 17, 'info' : id }}), 404
+        return jsonify({'error': { 'msg' : 'User not found', 'code' : 16, 'info' : id }}), 404
 
 
 @app.route('/users/<int:user_id>', methods=["PUT", "PATCH"])
@@ -38,7 +38,7 @@ def edit_user(user_id):
         return jsonify({'error': { 'msg' : 'Operation not permitted', 'code' : 14 }}), 403
     user = User.query.get(user_id)
     if not user:
-        return jsonify({'error': { 'msg' : 'User not found', 'code' : 17, 'info' : id }}), 404
+        return jsonify({'error': { 'msg' : 'User not found', 'code' : 16, 'info' : id }}), 404
 
     try:
         if "password" in request.json:
@@ -51,7 +51,7 @@ def edit_user(user_id):
         return '', 200
     except Exception as error:
         db.session.rollback()
-        return jsonify({"error": { 'msg' : "Failed to update user", 'code' : 18 }}), 500
+        return jsonify({"error": { 'msg' : "Failed to update user", 'code' : 17 }}), 500
 
 
 @app.route('/users', methods=["POST"])
@@ -76,7 +76,7 @@ def delete_user(user_id):
 
     user = User.query.get(user_id)
     if not user:
-        return jsonify({'error': { 'msg' : 'User not found', 'code' : 17, 'info' : id }}), 404
+        return jsonify({'error': { 'msg' : 'User not found', 'code' : 16, 'info' : id }}), 404
 
     try:
         db.session.delete(user)
@@ -85,7 +85,7 @@ def delete_user(user_id):
     except Exception as error:
         # Log error
         print error
-        return jsonify({"error": { 'msg' : "Cannot delete user", 'code' : 19 }}), 500
+        return jsonify({"error": { 'msg' : "Cannot delete user", 'code' : 18 }}), 500
 
 
 @app.route('/users/checkUnique', methods=["GET"])
@@ -93,9 +93,9 @@ def check_unique_attribute():
     arguments = request.args
     possible_keys = ['username','email']
     if not 'key' in arguments or not 'value' in arguments:
-        return jsonify({'error' : { 'msg' : '"key" and "value" must be given as query parameters', 'code' : 20 }}), 400
+        return jsonify({'error' : { 'msg' : '"key" and "value" must be given as query parameters', 'code' : 19 }}), 400
     if not arguments['key'] in possible_keys:
-        return jsonify({'error' : { 'msg' : '"key" can be one of the following: ' + ",".join(possible_keys), 'code' : 21, 'info' : ",".join(possible_keys) }}), 400
+        return jsonify({'error' : { 'msg' : '"key" can be one of the following: ' + ",".join(possible_keys), 'code' : 20, 'info' : ",".join(possible_keys) }}), 400
     kwargs = {arguments['key'] : arguments['value']}
     user = User.query.filter_by(**kwargs).first()
     if not user:

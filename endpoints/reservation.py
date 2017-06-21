@@ -137,7 +137,7 @@ def remove_reservation(id):
         return jsonify({'error': { 'msg' : 'Operation not permitted', 'code' : 14 }}), 403
 
     if not reservation:
-        return jsonify({'error': { 'msg' : 'Reservation with id ' + id + ' not found', 'code' : 15, 'info' : id }}), 404
+        return jsonify({'error': { 'msg' : 'Reservation with id ' + id + ' not found', 'code' : 10 }}), 404
 
     try:
         db.session.delete(reservation)
@@ -146,7 +146,7 @@ def remove_reservation(id):
     except Exception as error:
         db.session.rollback()
         print error
-        return jsonify({"error": { 'msg' : "Failed to delete reservation", 'code' : 16 }}), 500
+        return jsonify({"error": { 'msg' : "Failed to delete reservation", 'code' : 15 }}), 500
 
 
 def is_overlapping(start_date, end_date, all_events):
