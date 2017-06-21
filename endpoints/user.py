@@ -38,7 +38,7 @@ def edit_user(user_id):
         return jsonify({'error': { 'msg' : 'Operation not permitted', 'code' : 14 }}), 403
     user = User.query.get(user_id)
     if not user:
-        return jsonify({'error': { 'msg' : 'User not found', 'code' : 16, 'info' : id }}), 404
+        return jsonify({'error': { 'msg' : 'User not found', 'code' : 16, 'info' : user_id }}), 404
 
     try:
         if "password" in request.json:
