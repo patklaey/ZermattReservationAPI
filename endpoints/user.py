@@ -22,6 +22,10 @@ def show_users():
 @app.route('/users/<int:id>', methods=["GET"])
 @jwt_required
 def show_user(id):
+    user_id_from_token = get_jwt_identity()
+    current_user = User.query.get(user_id_from_token)
+    if not current_user.admin and id != user_id_from_token:
+        return jsonify({"error": { 'msg' : 'Operation not permitted', 'code' : 14 }}), 403
     user = User.query.get(id)
     if user is not None:
         return jsonify(user.to_dict())
@@ -34,7 +38,7 @@ def show_user(id):
 def edit_user(user_id):
     user_id_from_token = get_jwt_identity()
     current_user = User.query.get(user_id_from_token)
-    if not current_user.admin:
+    if not current_user.admin and id != user_id_from_token:
         return jsonify({'error': { 'msg' : 'Operation not permitted', 'code' : 14 }}), 403
     user = User.query.get(user_id)
     if not user:
@@ -60,7 +64,7 @@ def add_user():
         if not attribute in request.json:
             return jsonify({'error': {'msg' : '\'' + attribute + '\' is required', 'code' : 2, 'info' : attribute}}), 400
     data = request.json
-    new_user = User(data['username'], data['password'], data['email'])
+    new_user = User(data['username'], data['password'], data['email'], data['language'])
     db.session.add(new_user)
     db.session.commit()
     send_new_user_mail(new_user)

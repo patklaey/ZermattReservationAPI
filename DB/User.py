@@ -8,15 +8,17 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True)
     password_hash = db.Column(db.String(128))
     email = db.Column(db.String(120), unique=True)
+    language = db.Column(db.String(20))
     admin = db.Column(db.Boolean)
     active = db.Column(db.Boolean)
 
-    def __init__(self, username, password, email, admin=False, active=False):
+    def __init__(self, username, password, email, language="de", admin=False, active=False):
         self.username = username
         self.email = email
         self.admin = admin
         self.hash_password(password)
         self.active = active
+        self.language = language
 
     def to_dict(self):
         dict = self.__dict__
@@ -39,7 +41,8 @@ class User(db.Model):
         return {
             'admin': g.user.admin,
             'username': g.user.username,
-            'userId': user_id
+            'userId': user_id,
+            'language': g.user.language
         }
 
     @staticmethod
@@ -49,7 +52,7 @@ class User(db.Model):
 
     @staticmethod
     def get_all_attributes():
-        return ['username', 'password', 'email', 'admin', 'active']
+        return ['username', 'password', 'email', 'admin', 'active', 'language']
 
 
     @staticmethod
