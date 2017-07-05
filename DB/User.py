@@ -58,3 +58,8 @@ class User(db.Model):
     @staticmethod
     def get_admin_accounts():
         return User.query.filter_by(admin=True).all()
+
+
+    @staticmethod
+    def get_protected_attributes():
+        return ['active', 'admin', 'username', 'email']

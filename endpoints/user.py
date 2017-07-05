@@ -63,17 +63,26 @@ def show_user(id):
 def edit_user(user_id):
     user_id_from_token = get_jwt_identity()
     current_user = User.query.get(user_id_from_token)
-    if not current_user.admin and id != user_id_from_token:
+    if not current_user.admin and user_id != user_id_from_token:
         return jsonify({'error': {'msg': 'Operation not permitted', 'code': 14}}), 403
     user = User.query.get(user_id)
     if not user:
         return jsonify({'error': {'msg': 'User not found', 'code': 16, 'info': user_id}}), 404
+
+    if "password" in request.json and not current_user.admin:
+        if not "oldPassword" in request.json:
+            return jsonify({'error': {'msg': 'Current password must be provided as "oldPassword" within the request body', 'code': 21}}), 400
+        if not user.verify_password(request.json["oldPassword"]):
+            return jsonify({'error': {'msg': 'Password missmatch for user', 'code': 22}}), 401
 
     try:
         if "password" in request.json:
             user.hash_password(request.json["password"])
             del request.json["password"]
         for attribute in request.json:
+            if attribute in User.get_protected_attributes() and not current_user.admin:
+                db.session.rollback()
+                return jsonify({'error': {'msg': 'Attribute protected', 'code': 23}}), 400
             if attribute in User.get_all_attributes():
                 setattr(user, attribute, request.json[attribute])
                 if attribute == "active" and request.json[attribute] == 1:
