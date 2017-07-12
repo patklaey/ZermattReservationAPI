@@ -14,7 +14,17 @@ MAIL_MESSAGES = {
         },
         'activation' : {
             'subject' : "Konto auf zermatt.patklaey.ch aktiviert",
-            'message' : "Hallo {}\n\nDein Konto wurde soeben von einem Administrator aktiviert. Du kannst dich ab sofort auf https://zermatt.patklaey.ch einloggen und reservationen tätigen.\n\nViel Spass.\n\nermatt Reservationen"
+            'message' : "Hallo {}\n\nDein Konto wurde soeben von einem Administrator aktiviert. Du kannst dich ab sofort auf https://zermatt.patklaey.ch einloggen und reservationen tätigen.\n\nViel Spass.\n\nZermatt Reservationen"
+        }
+    },
+    'de-be': {
+        'registration' : {
+            'subject': "Registration uf zermatt.patklaey.ch",
+            'message': "Hallo {}\n\nMerci viu mau für d Registrierig, dis Konto wird gli aktiviert. Du wirsch es witers Mail mit dr Aktivierigsbestätigung für dis Konto becho.\n\nZermatt Reservatione"
+        },
+        'activation' : {
+            'subject' : "Konto uf zermatt.patklaey.ch isch aktiviert",
+            'message' : "Hallo {}\n\nDis Konto isch grad vomene Administrator aktiviert worde. Du chasch di ab sofort uf https://zermatt.patklaey.ch ilogge u reservatione tätige.\n\nViu Spass.\n\nZermatt Reservatione"
         }
     },
     'en': {
