@@ -1,8 +1,9 @@
 # coding=utf-8
 import smtplib
+import copy
 from email.mime.text import MIMEText
 from main import app, db
-from flask import jsonify, request, g
+from flask import jsonify, request
 from DB.User import User
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
@@ -47,7 +48,8 @@ def show_users():
     current_user = User.query.get(user_id)
     if not current_user or not current_user.admin:
         return jsonify({"error": {'msg': 'Operation not permitted', 'code': 14}}), 403
-    users = User.query.all()
+    db_users = User.query.all()
+    users = copy.deepcopy(db_users)
     userDict = []
     for user in users:
         userDict.append(user.to_dict())
@@ -63,7 +65,7 @@ def show_user(id):
         return jsonify({"error": {'msg': 'Operation not permitted', 'code': 14}}), 403
     user = User.query.get(id)
     if user is not None:
-        return jsonify(user.to_dict())
+        return jsonify(copy.deepcopy(user).to_dict())
     else:
         return jsonify({'error': {'msg': 'User not found', 'code': 16, 'info': id}}), 404
 
