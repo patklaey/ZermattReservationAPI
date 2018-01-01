@@ -57,7 +57,7 @@ def post_reservations():
         reservation = Reservation(data['title'], start_date, end_date, data['allDay'], user_id, description)
     except ValueError as error:
         if error.message == Reservation.END_BEFORE_START_ERROR_MESSAGE:
-            return jsonify({"error" : { 'msg' : "Start date cannot be after end date", 'code' : 6 }}), 409
+            return jsonify({"error" : { 'msg' : "Start date cannot be after end date", 'code' : 6 }}), 400
         else:
             # Log error
             print error
@@ -90,7 +90,7 @@ def update_reservation(id):
         start_time = parse(request.json["startTime"])
         end_time = parse(request.json["endTime"])
         if end_time < start_time:
-            return jsonify({"error" : { 'msg' : Reservation.END_BEFORE_START_ERROR_MESSAGE, 'code' : 11 }}), 409
+            return jsonify({"error" : { 'msg' : Reservation.END_BEFORE_START_ERROR_MESSAGE, 'code' : 11 }}), 400
 
     try:
         for attribute in request.json:
@@ -106,11 +106,11 @@ def update_reservation(id):
 
                         if attribute == "endTime" and not 'startTime' in request.json:
                             if date_value < reservation.startTime:
-                                return jsonify({"error" : { 'msg' : Reservation.END_BEFORE_START_ERROR_MESSAGE, 'code' : 11 }}), 409
+                                return jsonify({"error" : { 'msg' : Reservation.END_BEFORE_START_ERROR_MESSAGE, 'code' : 11 }}), 400
 
                         if attribute == "startTime" and not 'endTime' in request.json:
                             if reservation.endTime < date_value:
-                                return jsonify({"error" : { 'msg' : Reservation.END_BEFORE_START_ERROR_MESSAGE, 'code' : 11 }}), 409
+                                return jsonify({"error" : { 'msg' : Reservation.END_BEFORE_START_ERROR_MESSAGE, 'code' : 11 }}), 400
 
                         setattr(reservation, attribute, date_value)
                     except ValueError:

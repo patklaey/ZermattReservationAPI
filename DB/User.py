@@ -22,8 +22,10 @@ class User(db.Model):
 
     def to_dict(self):
         dict = self.__dict__
-        del dict['_sa_instance_state']
-        del dict['password_hash']
+        if '_sa_instance_state' in dict:
+            del dict['_sa_instance_state']
+        if 'password_hash' in dict:
+            del dict['password_hash']
         return dict
 
     def hash_password(self, password):

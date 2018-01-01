@@ -53,7 +53,8 @@ class Reservation(db.Model):
 
     def to_dict(self):
         dict = self.__dict__
-        del dict['_sa_instance_state']
+        if '_sa_instance_state' in dict:
+            del dict['_sa_instance_state']
         return dict
 
     @staticmethod

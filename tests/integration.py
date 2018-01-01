@@ -1,5 +1,6 @@
 import base64
 
+import copy
 import pytz
 import sys
 sys.path.insert(0, '/Users/tgdklpa4/IdeaProjects/ZermattReservationAPI')
@@ -87,6 +88,12 @@ class IntegrationTest(LiveServerTestCase):
         self.assertEqual(delete_response.status_code, delete_status_code, delete_response.data)
         self.get_reservation(reservation_id, get_status_code)
 
+    def update_reservation(self, update_request, expected_status_code=400):
+        update_result = self.client.put(self.RESERVATION_URL + "/1", data=json.dumps(update_request),
+                                        headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        self.assertEqual(update_result.status_code, expected_status_code)
+
+
     def add_user_reservation(self):
         start = datetime.now()
         end = datetime.now() + timedelta(hours=1)
@@ -100,6 +107,15 @@ class IntegrationTest(LiveServerTestCase):
         reservation = Reservation("Admin Reservation", start, end, False, self.admin.id, "Description")
         self.login_as_admin()
         self.add_reservation(reservation)
+
+    def add_base_reservation(self):
+        base_reservation_start = datetime(2018, 01, 01, 12, 00, 00, 00)
+        base_reservation_end = datetime(2018, 01, 01, 16, 00, 00, 00)
+        base_reservation = Reservation("base reservation", base_reservation_start, base_reservation_end, False,
+                                       self.USER_USER_ID)
+        self.login_as_user()
+        self.add_reservation(base_reservation)
+        return base_reservation_end, base_reservation_start
 
     def test_flask_application_is_up_and_running(self):
         result = self.client.get("/")
@@ -249,11 +265,7 @@ class IntegrationTest(LiveServerTestCase):
         mock_smtplib.SMTP_SSL.assert_called_with(app.config['MAIL_HOST'],app.config['MAIL_PORT'])
 
     def test_cannot_have_overlapping_events(self):
-        base_reservation_start = datetime(2018, 01, 01, 12, 00, 00, 00)
-        base_reservation_end = datetime(2018, 01, 01, 16, 00, 00, 00)
-        base_reservation = Reservation("base reservation", base_reservation_start, base_reservation_end, False, self.USER_USER_ID)
-        self.login_as_user()
-        self.add_reservation(base_reservation)
+        base_reservation_end, base_reservation_start = self.add_base_reservation()
         overlapping_beginning_start = base_reservation_start - timedelta(hours=1)
         overlapping_beginning_end = base_reservation_start + timedelta(hours=1)
         overlapping_beginning = Reservation("Overlapping beginning", overlapping_beginning_start, overlapping_beginning_end, False, self.ADMIN_USER_ID)
@@ -275,9 +287,46 @@ class IntegrationTest(LiveServerTestCase):
         perfect_match_end = base_reservation_end + timedelta(hours=1)
         perfect_match = Reservation("Perfect match", perfect_match_start, perfect_match_end, False, self.ADMIN_USER_ID)
         self.add_reservation(perfect_match)
+        same_start_start = base_reservation_start
+        same_start_end = base_reservation_end + timedelta(hours=1)
+        same_start = Reservation("Same start", same_start_start, same_start_end, False, self.ADMIN_USER_ID)
+        self.add_reservation(same_start, 409)
+        same_end_start = base_reservation_start + timedelta(hours=1)
+        same_end_end = base_reservation_end
+        same_end = Reservation("Same end", same_end_start, same_end_end, False, self.ADMIN_USER_ID)
+        self.add_reservation(same_end, 409)
+
+    def test_wrong_time_values(self):
+        base_reservation_end, base_reservation_start = self.add_base_reservation()
+        wrong_values_start = datetime(2018, 01, 01, 10, 00, 00, 00)
+        wrong_values_end = datetime(2018, 01, 01, 11, 00, 00, 00)
+        wrong_values = Reservation("Wrong values", wrong_values_start, wrong_values_end, False, self.ADMIN_USER_ID)
+        wrong_values.endTime -= timedelta(hours=2)
+        self.login_as_admin()
+        self.add_reservation(wrong_values, 400)
+        update_end_time_request = { "endTime": (base_reservation_end - timedelta(days=1)).__str__()}
+        self.update_reservation(update_end_time_request)
+        update_start_time_request = {"startTime": (base_reservation_start + timedelta(days=1)).__str__()}
+        self.update_reservation(update_start_time_request)
+        update_wrong_dates_request = dict(update_start_time_request.items() + update_end_time_request.items())
+        self.update_reservation(update_wrong_dates_request)
+        self.update_reservation({'startTime': "asdf"})
+        self.update_reservation({'endTime': "asdf"})
+        invalid_start_date_data = wrong_values.to_dict()
+        invalid_start_date_data['startTime'] = "asdf"
+        result = self.client.post(self.RESERVATION_URL, data=invalid_start_date_data,
+                                  headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        self.assertEqual(result.status_code, 400, result.data)
+        invalid_end_date_data = wrong_values.to_dict()
+        invalid_end_date_data['startTime'] = "asdf"
+        result = self.client.post(self.RESERVATION_URL, data=invalid_end_date_data,
+                                  headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        self.assertEqual(result.status_code, 400, result.data)
+
 
     # TODO: Update password
     # TODO: Update protected valus (username, email)
+
 
 if __name__ == '__main__':
     unittest.main()
