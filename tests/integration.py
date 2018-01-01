@@ -351,8 +351,27 @@ class IntegrationTest(LiveServerTestCase):
         self.assertEqual(unique_result.status_code, 200)
         self.assertEqual(json.loads(unique_result.data)['unique'], True)
 
+    def test_user_update_self_password(self):
+        self.login_as_user()
+        update_password_missing_old = {"password": "asdfasdf"}
+        update_result = self.client.put(self.USER_URL + "/" + str(self.USER_USER_ID),
+                                        data=json.dumps(update_password_missing_old),
+                                        headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        self.assertEqual(update_result.status_code, 400, update_result.data)
+        self.assertEqual(json.loads(update_result.data)['error']['msg'], "Current password must be provided as \"oldPassword\" within the request body")
+        update_password_mismatch_old = {"password": "asdf", "oldPassword": "asdfasdf"}
+        update_result = self.client.put(self.USER_URL + "/" + str(self.USER_USER_ID),
+                                        data=json.dumps(update_password_mismatch_old),
+                                        headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        self.assertEqual(update_result.status_code, 401, update_result.data)
+        self.assertEqual(json.loads(update_result.data)['error']['msg'], "Password missmatch for user")
+        update_password_request = {"password": "asdf", "oldPassword": "password" }
+        update_result = self.client.put(self.USER_URL + "/" + str(self.USER_USER_ID),
+                                        data=json.dumps(update_password_request),
+                                        headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        self.assertEqual(update_result.status_code, 204, update_result.data)
 
-    # TODO: Update password
+
     # TODO: Update protected valus (username, email)
 
 
