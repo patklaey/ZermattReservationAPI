@@ -129,7 +129,7 @@ def delete_user(user_id):
 
     user = User.query.get(user_id)
     if not user:
-        return jsonify({'error': {'msg': 'User not found', 'code': 16, 'info': id}}), 404
+        return jsonify({'error': {'msg': 'User not found', 'code': 16, 'info': user_id}}), 404
 
     try:
         db.session.delete(user)

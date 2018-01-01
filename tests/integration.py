@@ -189,7 +189,7 @@ class IntegrationTest(LiveServerTestCase):
         self.assertEqual(read_response_data['id'], reservation_id)
         # Update
         new_end = end + timedelta(hours=1)
-        update_request = {"endTime": new_end}
+        update_request = {"endTime": new_end, "title": "updated title"}
         update_response = self.client.put(self.RESERVATION_URL + "/" + str(reservation_id), data=json.dumps(update_request, default=self.datetime_converter), headers={'accept': 'application/json', 'Content-Type': 'application/json'})
         self.assertEqual(update_response.status_code, 204)
         read_response_data = self.get_reservation(reservation_id)
@@ -197,6 +197,7 @@ class IntegrationTest(LiveServerTestCase):
         self.assertNotEqual(read_response_data['endTime'], reservation.endTime.strftime("%a, %d %b %Y %X GMT"))
         # Delete
         self.delete_reservation(reservation_id)
+        self.delete_reservation(reservation_id, 404)
 
     def test_admin_can_rud_other_reservations(self):
         self.add_user_reservation()
@@ -209,7 +210,7 @@ class IntegrationTest(LiveServerTestCase):
         self.assertEqual(update_response.status_code, 204)
         self.delete_reservation(reservation['id'])
 
-    def test_user_cannot_rud_others(self):
+    def test_user_cannot_rud_other_reservations(self):
         self.add_admin_reservation()
         self.login_as_user()
         reservation = self.get_reservation(1)
@@ -251,6 +252,8 @@ class IntegrationTest(LiveServerTestCase):
         self.assertEqual(delete_response.status_code, 204)
         user_response = self.client.get(self.USER_URL + "/" + str(self.USER_USER_ID))
         self.assertEqual(user_response.status_code, 404)
+        delete_response = self.client.delete(self.USER_URL + "/" + str(self.USER_USER_ID))
+        self.assertEqual(delete_response.status_code, 404)
 
     @mock.patch('endpoints.user.smtplib')
     def test_create_user(self, mock_smtplib):
@@ -314,12 +317,17 @@ class IntegrationTest(LiveServerTestCase):
         self.update_reservation({'endTime': "asdf"})
         invalid_start_date_data = wrong_values.to_dict()
         invalid_start_date_data['startTime'] = "asdf"
-        result = self.client.post(self.RESERVATION_URL, data=invalid_start_date_data,
+        result = self.client.post(self.RESERVATION_URL, data=json.dumps(invalid_start_date_data, default=self.datetime_converter),
                                   headers={'accept': 'application/json', 'Content-Type': 'application/json'})
         self.assertEqual(result.status_code, 400, result.data)
         invalid_end_date_data = wrong_values.to_dict()
-        invalid_end_date_data['startTime'] = "asdf"
-        result = self.client.post(self.RESERVATION_URL, data=invalid_end_date_data,
+        invalid_end_date_data['endTime'] = "asdf"
+        result = self.client.post(self.RESERVATION_URL, data=json.dumps(invalid_end_date_data, default=self.datetime_converter),
+                                  headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        self.assertEqual(result.status_code, 400, result.data)
+        missing_start_time_data = wrong_values.to_dict()
+        del missing_start_time_data['startTime']
+        result = self.client.post(self.RESERVATION_URL, data=json.dumps(missing_start_time_data, default=self.datetime_converter),
                                   headers={'accept': 'application/json', 'Content-Type': 'application/json'})
         self.assertEqual(result.status_code, 400, result.data)
 
