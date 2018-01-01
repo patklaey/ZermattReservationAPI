@@ -7,6 +7,7 @@ from flask import jsonify, request
 from DB.User import User
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
+PASSWORD_MIN_LENGTH = 8
 MAIL_MESSAGES = {
     'de': {
         'registration' : {
@@ -89,6 +90,8 @@ def edit_user(user_id):
 
     try:
         if "password" in request.json:
+            if len(request.json['password']) < PASSWORD_MIN_LENGTH:
+                return jsonify({'error': {'msg': 'Password needs to be at least 8 characters long', 'code': 24}}), 400
             user.hash_password(request.json["password"])
             del request.json["password"]
         for attribute in request.json:
@@ -111,6 +114,8 @@ def add_user():
     for attribute in User.get_required_attributes():
         if not attribute in request.json:
             return jsonify({'error': {'msg': '\'' + attribute + '\' is required', 'code': 2, 'info': attribute}}), 400
+    if len(request.json['password']) < PASSWORD_MIN_LENGTH:
+        return jsonify({'error': {'msg': 'Password needs to be at least 8 characters long', 'code': 24}}), 400
     data = request.json
     new_user = User(data['username'], data['password'], data['email'], data['language'])
     db.session.add(new_user)

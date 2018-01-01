@@ -369,10 +369,18 @@ class IntegrationTest(LiveServerTestCase):
         update_result = self.client.put(self.USER_URL + "/" + str(self.USER_USER_ID),
                                         data=json.dumps(update_password_request),
                                         headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        self.assertEqual(update_result.status_code, 400, update_result.data)
+        self.assertEqual(json.loads(update_result.data)['error']['msg'], "Password needs to be at least 8 characters long")
+        update_password_request = {"password": "newPassword", "oldPassword": "password" }
+        update_result = self.client.put(self.USER_URL + "/" + str(self.USER_USER_ID),
+                                        data=json.dumps(update_password_request),
+                                        headers={'accept': 'application/json', 'Content-Type': 'application/json'})
         self.assertEqual(update_result.status_code, 204, update_result.data)
+        auth = "Basic " + base64.b64encode("user:newPassword")
+        result = self.client.get("/token", None, headers={'Authorization': auth})
+        self.assertEqual(result.status_code, 200, result.data)
 
-
-    # TODO: Update protected valus (username, email)
+        # TODO: Update protected valus (username, email)
 
 
 if __name__ == '__main__':
