@@ -331,6 +331,26 @@ class IntegrationTest(LiveServerTestCase):
                                   headers={'accept': 'application/json', 'Content-Type': 'application/json'})
         self.assertEqual(result.status_code, 400, result.data)
 
+    def test_check_unique(self):
+        unique_result = self.client.get(self.USER_URL + "/checkUnique?key=username&value=newUser")
+        self.assertEqual(unique_result.status_code, 200)
+        self.assertEqual(json.loads(unique_result.data)['unique'], True)
+        unique_result = self.client.get(self.USER_URL + "/checkUnique?key=username&value=user")
+        self.assertEqual(unique_result.status_code, 200)
+        self.assertEqual(json.loads(unique_result.data)['unique'], False)
+        unique_result = self.client.get(self.USER_URL + "/checkUnique?key=username")
+        self.assertEqual(unique_result.status_code, 400)
+        unique_result = self.client.get(self.USER_URL + "/checkUnique?value=test")
+        self.assertEqual(unique_result.status_code, 400)
+        unique_result = self.client.get(self.USER_URL + "/checkUnique?key=asdf&value=asdf")
+        self.assertEqual(unique_result.status_code, 400)
+        unique_result = self.client.get(self.USER_URL + "/checkUnique?key=email&value=pat@247.ch")
+        self.assertEqual(unique_result.status_code, 200)
+        self.assertEqual(json.loads(unique_result.data)['unique'], False)
+        unique_result = self.client.get(self.USER_URL + "/checkUnique?key=email&value=asdf@247.ch")
+        self.assertEqual(unique_result.status_code, 200)
+        self.assertEqual(json.loads(unique_result.data)['unique'], True)
+
 
     # TODO: Update password
     # TODO: Update protected valus (username, email)
