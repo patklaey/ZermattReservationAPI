@@ -1,4 +1,6 @@
 import base64
+
+import pytz
 import sys
 sys.path.insert(0, '/Users/tgdklpa4/IdeaProjects/ZermattReservationAPI')
 
@@ -9,7 +11,7 @@ import json
 import mock
 from DB.User import User
 from DB.Reservation import Reservation
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, tzinfo
 from dateutil.parser import parse
 from endpoints.user import send_new_user_mail
 
@@ -69,6 +71,12 @@ class IntegrationTest(LiveServerTestCase):
         self.assertEqual(result.status_code, 200, result.data)
         return json.loads(result.data)['token']
 
+    def add_reservation(self, reservation, expected_status_code=201):
+        request_data = json.dumps(reservation.to_dict(), default=self.datetime_converter)
+        result = self.client.post(self.RESERVATION_URL, data=request_data,
+                                  headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        self.assertEqual(result.status_code, expected_status_code, result.data)
+
     def get_reservation(self, reservation_id, status_code=200):
         read_response = self.client.get(self.RESERVATION_URL + "/" + str(reservation_id), headers={'accept': 'application/json'})
         self.assertEqual(read_response.status_code, status_code, read_response.data)
@@ -83,13 +91,15 @@ class IntegrationTest(LiveServerTestCase):
         start = datetime.now()
         end = datetime.now() + timedelta(hours=1)
         reservation = Reservation("User Reservation", start, end, False, self.user.id, "Description")
-        db.session.add(reservation)
+        self.login_as_user()
+        self.add_reservation(reservation)
 
     def add_admin_reservation(self):
         start = datetime.now() + timedelta(days=1)
         end = datetime.now() + timedelta(days=1, hours=1)
         reservation = Reservation("Admin Reservation", start, end, False, self.admin.id, "Description")
-        db.session.add(reservation)
+        self.login_as_admin()
+        self.add_reservation(reservation)
 
     def test_flask_application_is_up_and_running(self):
         result = self.client.get("/")
@@ -238,10 +248,36 @@ class IntegrationTest(LiveServerTestCase):
         self.assertEqual(update_response.status_code, 204)
         mock_smtplib.SMTP_SSL.assert_called_with(app.config['MAIL_HOST'],app.config['MAIL_PORT'])
 
+    def test_cannot_have_overlapping_events(self):
+        base_reservation_start = datetime(2018, 01, 01, 12, 00, 00, 00)
+        base_reservation_end = datetime(2018, 01, 01, 16, 00, 00, 00)
+        base_reservation = Reservation("base reservation", base_reservation_start, base_reservation_end, False, self.USER_USER_ID)
+        self.login_as_user()
+        self.add_reservation(base_reservation)
+        overlapping_beginning_start = base_reservation_start - timedelta(hours=1)
+        overlapping_beginning_end = base_reservation_start + timedelta(hours=1)
+        overlapping_beginning = Reservation("Overlapping beginning", overlapping_beginning_start, overlapping_beginning_end, False, self.ADMIN_USER_ID)
+        self.login_as_admin()
+        self.add_reservation(overlapping_beginning, 409)
+        overlapping_end_start = base_reservation_end - timedelta(seconds=1)
+        overlapping_end_end = base_reservation_end + timedelta(hours=1)
+        overlapping_end = Reservation("Overlapping end", overlapping_end_start, overlapping_end_end, False, self.ADMIN_USER_ID)
+        self.add_reservation(overlapping_end, 409)
+        contained_start = base_reservation_start + timedelta(minutes=1)
+        contained_end = base_reservation_end - timedelta(minutes=1)
+        contained = Reservation("Contained", contained_start, contained_end, False, self.ADMIN_USER_ID)
+        self.add_reservation(contained, 409)
+        wrapping_start = base_reservation_start - timedelta(minutes=1)
+        wrapping_end = base_reservation_end + timedelta(minutes=1)
+        wrapping = Reservation("Wrapping", wrapping_start, wrapping_end, False, self.ADMIN_USER_ID)
+        self.add_reservation(wrapping, 409)
+        perfect_match_start = base_reservation_end
+        perfect_match_end = base_reservation_end + timedelta(hours=1)
+        perfect_match = Reservation("Perfect match", perfect_match_start, perfect_match_end, False, self.ADMIN_USER_ID)
+        self.add_reservation(perfect_match)
+
     # TODO: Update password
     # TODO: Update protected valus (username, email)
-    # TODO: Check overlapping events
-
 
 if __name__ == '__main__':
     unittest.main()
