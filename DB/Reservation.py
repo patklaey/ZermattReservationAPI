@@ -15,11 +15,11 @@ class Reservation(db.Model):
     description = db.Column(db.String(256))
     userId = db.Column(db.Integer, db.ForeignKey('users.id'))
 
-    def __init__(self, title, start_date, end_date, all_day, uesr_id, description=""):
+    def __init__(self, title, start_date, end_date, all_day, user_id, description=""):
         self.title = title
         self.description = description
         self.allDay = all_day
-        self.userId = uesr_id
+        self.userId = user_id
 
         if not type(start_date) is datetime:
             raise ValueError("start_date must be a datetime object")

@@ -6,10 +6,12 @@ from main import app, db
 from flask_testing import LiveServerTestCase
 import unittest
 import json
+import mock
 from DB.User import User
 from DB.Reservation import Reservation
 from datetime import datetime, timedelta
 from dateutil.parser import parse
+from endpoints.user import send_new_user_mail
 
 # Testing with LiveServer
 class IntegrationTest(LiveServerTestCase):
@@ -95,9 +97,13 @@ class IntegrationTest(LiveServerTestCase):
         self.assertEqual(result.data, "Hello, this is an API, Swagger documentation will follow here...")
 
     def test_actions_when_not_logged_in(self):
+        reservation = Reservation("test", datetime.now(), datetime.now(), False, self.USER_USER_ID, "")
+        db.session.add(reservation)
+        db.session.commit()
         result = self.client.get(self.RESERVATION_URL)
         self.assertEqual(result.status_code, 200)
-        self.assertEqual(json.loads(result.data), [])
+        self.assertEqual(len(json.loads(result.data)), 1)
+        #self.assertEqual(json.loads(result.data), [])
         self.assert_unauthorized(self.client.get(self.USER_URL))
         self.assert_unauthorized(self.client.get(self.USER_URL + "/1"))
         self.assert_unauthorized(self.client.put(self.USER_URL + "/1"))
@@ -210,7 +216,7 @@ class IntegrationTest(LiveServerTestCase):
         self.assertEqual(language_before_update, 'de')
         update_request = {'language':'en'}
         update_response = self.client.put(self.USER_URL + "/" + str(self.USER_USER_ID), data=json.dumps(update_request), headers={'accept': 'application/json', 'Content-Type': 'application/json'})
-        self.assertEqual(update_response.status_code, 200)
+        self.assertEqual(update_response.status_code, 204)
         user_response = self.client.get(self.USER_URL + "/" + str(self.USER_USER_ID))
         language_after_update = json.loads(user_response.data)['language']
         self.assertEqual(language_after_update, 'en')
@@ -220,9 +226,20 @@ class IntegrationTest(LiveServerTestCase):
         user_response = self.client.get(self.USER_URL + "/" + str(self.USER_USER_ID))
         self.assertEqual(user_response.status_code, 404)
 
+    @mock.patch('endpoints.user.smtplib')
+    def test_create_user(self, mock_smtplib):
+        request_data = {'username':'testuser', 'email':'testuser@247.ch', 'password':'password', 'language':'de'}
+        create_response = self.client.post(self.USER_URL, data=json.dumps(request_data), headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        self.assertEqual(create_response.status_code, 201, create_response.data)
+        mock_smtplib.SMTP_SSL.assert_called_with(app.config['MAIL_HOST'],app.config['MAIL_PORT'])
+        self.login_as_admin()
+        update_data = {'active': 1}
+        update_response = self.client.put(self.USER_URL + "/" + str(self.USER_USER_ID + 1), data=json.dumps(update_data), headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        self.assertEqual(update_response.status_code, 204)
+        mock_smtplib.SMTP_SSL.assert_called_with(app.config['MAIL_HOST'],app.config['MAIL_PORT'])
+
     # TODO: Update password
     # TODO: Update protected valus (username, email)
-    # TODO: Everyone can create user
     # TODO: Check overlapping events
 
 

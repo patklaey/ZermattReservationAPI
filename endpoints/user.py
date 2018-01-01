@@ -100,7 +100,7 @@ def edit_user(user_id):
                 if attribute == "active" and request.json[attribute] == 1:
                     send_activation_mail(user)
         db.session.commit()
-        return '', 200
+        return '', 204
     except Exception as error:
         db.session.rollback()
         return jsonify({"error": {'msg': "Failed to update user", 'code': 17}}), 500
