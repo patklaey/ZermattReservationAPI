@@ -83,7 +83,7 @@ def edit_user(user_id):
         return jsonify({'error': {'msg': 'User not found', 'code': 16, 'info': user_id}}), 404
 
     if "password" in request.json and not current_user.admin:
-        if not "oldPassword" in request.json:
+        if "oldPassword" not in request.json:
             return jsonify({'error': {'msg': 'Current password must be provided as "oldPassword" within the request body', 'code': 21}}), 400
         if not user.verify_password(request.json["oldPassword"]):
             return jsonify({'error': {'msg': 'Password missmatch for user', 'code': 22}}), 401
@@ -104,7 +104,7 @@ def edit_user(user_id):
                     send_activation_mail(user)
         db.session.commit()
         return '', 204
-    except Exception as error:
+    except Exception:
         db.session.rollback()
         return jsonify({"error": {'msg': "Failed to update user", 'code': 17}}), 500
 
@@ -112,7 +112,7 @@ def edit_user(user_id):
 @app.route('/users', methods=["POST"])
 def add_user():
     for attribute in User.get_required_attributes():
-        if not attribute in request.json:
+        if attribute not in request.json:
             return jsonify({'error': {'msg': '\'' + attribute + '\' is required', 'code': 2, 'info': attribute}}), 400
     if len(request.json['password']) < PASSWORD_MIN_LENGTH:
         return jsonify({'error': {'msg': 'Password needs to be at least 8 characters long', 'code': 24}}), 400
@@ -150,7 +150,7 @@ def delete_user(user_id):
 def check_unique_attribute():
     arguments = request.args
     possible_keys = ['username', 'email']
-    if not 'key' in arguments or not 'value' in arguments:
+    if 'key' not in arguments or 'value' not in arguments:
         return jsonify({'error': {'msg': '"key" and "value" must be given as query parameters', 'code': 19}}), 400
     if not arguments['key'] in possible_keys:
         return jsonify({'error': {'msg': '"key" can be one of the following: ' + ",".join(possible_keys), 'code': 20,
