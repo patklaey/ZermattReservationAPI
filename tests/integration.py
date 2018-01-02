@@ -378,6 +378,42 @@ class IntegrationTest(LiveServerTestCase):
         result = self.client.get("/token", None, headers={'Authorization': auth})
         self.assertEqual(result.status_code, 200, result.data)
 
+    def test_get_next_reservation(self):
+        admin_start = datetime.now() + timedelta(hours=1)
+        admin_end = admin_start + timedelta(hours=2)
+        admin = Reservation("Admin", admin_start, admin_end, False, ADMIN_USER_ID)
+        self.login_as_admin()
+        self.add_reservation(admin)
+        next_reservation_result = self.client.get(USER_URL + "/" + str(USER_USER_ID) + "/nextReservation",
+                                                  headers=DEFAULT_HEADERS)
+        self.assertEqual(next_reservation_result.status_code, 204, next_reservation_result.data)
+        self.assertEqual(next_reservation_result.data, "")
+        yesterday_start = datetime.now() - timedelta(days=1, hours=1)
+        yesterday_end =  yesterday_start + timedelta(hours=1)
+        yesterday = Reservation("Yesterday", yesterday_start, yesterday_end, False, USER_USER_ID)
+        self.login_as_user()
+        self.add_reservation(yesterday)
+        next_reservation_result = self.client.get(USER_URL + "/" + str(USER_USER_ID) + "/nextReservation",
+                                                  headers=DEFAULT_HEADERS)
+        self.assertEqual(next_reservation_result.status_code, 204, next_reservation_result.data)
+        self.assertEqual(next_reservation_result.data, "")
+        tomorrow_start = datetime.now() + timedelta(days=1)
+        tomorrow_end = tomorrow_start + timedelta(hours=1)
+        tomorrow = Reservation("Tomorrow", tomorrow_start, tomorrow_end, False, USER_USER_ID)
+        self.add_reservation(tomorrow)
+        next_reservation_result = self.client.get(USER_URL + "/" + str(USER_USER_ID) + "/nextReservation",
+                                                  headers=DEFAULT_HEADERS)
+        self.assertEqual(next_reservation_result.status_code, 200, next_reservation_result.data)
+        self.assertEqual(json.loads(next_reservation_result.data)["title"], "Tomorrow")
+        next_start = datetime.now() + timedelta(hours=3)
+        next_end = next_start + timedelta(hours=1)
+        next = Reservation("Next", next_start, next_end, False, USER_USER_ID)
+        self.add_reservation(next)
+        next_reservation_result = self.client.get(USER_URL + "/" + str(USER_USER_ID) + "/nextReservation",
+                                                  headers=DEFAULT_HEADERS)
+        self.assertEqual(next_reservation_result.status_code, 200, next_reservation_result.data)
+        self.assertEqual(json.loads(next_reservation_result.data)["title"], "Next")
+
 
     # TODO: Update protected user valus (username, email)
 

@@ -1,10 +1,14 @@
 # coding=utf-8
 import smtplib
 import copy
+
+import pytz
+from datetime import datetime
 from email.mime.text import MIMEText
 from main import app, db
 from flask import jsonify, request
 from DB.User import User
+from DB.Reservation import Reservation
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 PASSWORD_MIN_LENGTH = 8
@@ -161,6 +165,20 @@ def check_unique_attribute():
         return jsonify({'unique': True}), 200
     else:
         return jsonify({'unique': False}), 200
+
+
+@app.route('/users/<int:user_id>/nextReservation', methods=["GET"])
+def get_next_reservation(user_id):
+    now = pytz.utc.localize(datetime.now())
+    all_user_reservations = Reservation.query.filter_by(userId=user_id).order_by(Reservation.startTime.asc()).all()
+    next_reservation = None
+    for reservation in all_user_reservations:
+        if reservation.startTime > now:
+            next_reservation = reservation
+            break
+    if next_reservation is None:
+        return '', 204
+    return jsonify(next_reservation.to_dict()), 200
 
 
 def send_new_user_mail(user):
