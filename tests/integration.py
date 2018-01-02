@@ -1,7 +1,4 @@
 import base64
-
-import copy
-import pytz
 import sys
 sys.path.insert(0, '/Users/tgdklpa4/IdeaProjects/ZermattReservationAPI')
 
@@ -16,13 +13,14 @@ from datetime import datetime, timedelta, tzinfo
 from dateutil.parser import parse
 from endpoints.user import send_new_user_mail
 
+DEFAULT_HEADERS = {'accept': 'application/json', 'Content-Type': 'application/json'}
+RESERVATION_URL = "/reservations"
+USER_URL = "/users"
+ADMIN_USER_ID = 1
+USER_USER_ID = 2
+
 # Testing with LiveServer
 class IntegrationTest(LiveServerTestCase):
-
-    RESERVATION_URL = "/reservations"
-    USER_URL = "/users"
-    ADMIN_USER_ID = 1
-    USER_USER_ID = 2
 
     admin = None
     user = None
@@ -74,23 +72,23 @@ class IntegrationTest(LiveServerTestCase):
 
     def add_reservation(self, reservation, expected_status_code=201):
         request_data = json.dumps(reservation.to_dict(), default=self.datetime_converter)
-        result = self.client.post(self.RESERVATION_URL, data=request_data,
-                                  headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        result = self.client.post(RESERVATION_URL, data=request_data,
+                                  headers=DEFAULT_HEADERS)
         self.assertEqual(result.status_code, expected_status_code, result.data)
 
     def get_reservation(self, reservation_id, status_code=200):
-        read_response = self.client.get(self.RESERVATION_URL + "/" + str(reservation_id), headers={'accept': 'application/json'})
+        read_response = self.client.get(RESERVATION_URL + "/" + str(reservation_id), headers={'accept': 'application/json'})
         self.assertEqual(read_response.status_code, status_code, read_response.data)
         return json.loads(read_response.data)
 
     def delete_reservation(self, reservation_id, delete_status_code=204, get_status_code=404):
-        delete_response = self.client.delete(self.RESERVATION_URL + "/" + str(reservation_id))
+        delete_response = self.client.delete(RESERVATION_URL + "/" + str(reservation_id))
         self.assertEqual(delete_response.status_code, delete_status_code, delete_response.data)
         self.get_reservation(reservation_id, get_status_code)
 
     def update_reservation(self, update_request, expected_status_code=400):
-        update_result = self.client.put(self.RESERVATION_URL + "/1", data=json.dumps(update_request),
-                                        headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        update_result = self.client.put(RESERVATION_URL + "/1", data=json.dumps(update_request),
+                                        headers=DEFAULT_HEADERS)
         self.assertEqual(update_result.status_code, expected_status_code)
 
 
@@ -112,7 +110,7 @@ class IntegrationTest(LiveServerTestCase):
         base_reservation_start = datetime(2018, 01, 01, 12, 00, 00, 00)
         base_reservation_end = datetime(2018, 01, 01, 16, 00, 00, 00)
         base_reservation = Reservation("base reservation", base_reservation_start, base_reservation_end, False,
-                                       self.USER_USER_ID)
+                                       USER_USER_ID)
         self.login_as_user()
         self.add_reservation(base_reservation)
         return base_reservation_end, base_reservation_start
@@ -123,21 +121,21 @@ class IntegrationTest(LiveServerTestCase):
         self.assertEqual(result.data, "Hello, this is an API, Swagger documentation will follow here...")
 
     def test_actions_when_not_logged_in(self):
-        reservation = Reservation("test", datetime.now(), datetime.now(), False, self.USER_USER_ID, "")
+        reservation = Reservation("test", datetime.now(), datetime.now(), False, USER_USER_ID)
         db.session.add(reservation)
         db.session.commit()
-        result = self.client.get(self.RESERVATION_URL)
+        result = self.client.get(RESERVATION_URL)
         self.assertEqual(result.status_code, 200)
         self.assertEqual(len(json.loads(result.data)), 1)
         #self.assertEqual(json.loads(result.data), [])
-        self.assert_unauthorized(self.client.get(self.USER_URL))
-        self.assert_unauthorized(self.client.get(self.USER_URL + "/1"))
-        self.assert_unauthorized(self.client.put(self.USER_URL + "/1"))
-        self.assert_unauthorized(self.client.delete(self.USER_URL + "/1"))
-        self.assert_unauthorized(self.client.post(self.RESERVATION_URL))
-        self.assert_unauthorized(self.client.get(self.RESERVATION_URL + "/1"))
-        self.assert_unauthorized(self.client.put(self.RESERVATION_URL + "/1"))
-        self.assert_unauthorized(self.client.delete(self.RESERVATION_URL + "/1"))
+        self.assert_unauthorized(self.client.get(USER_URL))
+        self.assert_unauthorized(self.client.get(USER_URL + "/1"))
+        self.assert_unauthorized(self.client.put(USER_URL + "/1"))
+        self.assert_unauthorized(self.client.delete(USER_URL + "/1"))
+        self.assert_unauthorized(self.client.post(RESERVATION_URL))
+        self.assert_unauthorized(self.client.get(RESERVATION_URL + "/1"))
+        self.assert_unauthorized(self.client.put(RESERVATION_URL + "/1"))
+        self.assert_unauthorized(self.client.delete(RESERVATION_URL + "/1"))
 
     def test_login(self):
         bad_auth = "Basic " + base64.b64encode("user:asdf")
@@ -172,7 +170,7 @@ class IntegrationTest(LiveServerTestCase):
         # Create
         reservation = Reservation("Title", start, end, False, self.user.id, "Description")
         request_data = json.dumps(reservation.to_dict(), default=self.datetime_converter)
-        result = self.client.post(self.RESERVATION_URL, data=request_data, headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        result = self.client.post(RESERVATION_URL, data=request_data, headers=DEFAULT_HEADERS)
         self.assertEqual(result.status_code, 201)
         response_data = json.loads(result.data)
         self.assertEqual(response_data['userId'], self.user.id)
@@ -190,7 +188,7 @@ class IntegrationTest(LiveServerTestCase):
         # Update
         new_end = end + timedelta(hours=1)
         update_request = {"endTime": new_end, "title": "updated title"}
-        update_response = self.client.put(self.RESERVATION_URL + "/" + str(reservation_id), data=json.dumps(update_request, default=self.datetime_converter), headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        update_response = self.client.put(RESERVATION_URL + "/" + str(reservation_id), data=json.dumps(update_request, default=self.datetime_converter), headers=DEFAULT_HEADERS)
         self.assertEqual(update_response.status_code, 204)
         read_response_data = self.get_reservation(reservation_id)
         self.assertEqual(read_response_data['endTime'], new_end.strftime("%a, %d %b %Y %X GMT"))
@@ -206,7 +204,7 @@ class IntegrationTest(LiveServerTestCase):
         end_time = parse(reservation['endTime'])
         new_end = end_time + timedelta(hours=1)
         update_request = {"endTime": new_end}
-        update_response = self.client.put(self.RESERVATION_URL + "/" + str(reservation['id']), data=json.dumps(update_request, default=self.datetime_converter), headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        update_response = self.client.put(RESERVATION_URL + "/" + str(reservation['id']), data=json.dumps(update_request, default=self.datetime_converter), headers=DEFAULT_HEADERS)
         self.assertEqual(update_response.status_code, 204)
         self.delete_reservation(reservation['id'])
 
@@ -217,53 +215,53 @@ class IntegrationTest(LiveServerTestCase):
         end_time = parse(reservation['endTime'])
         new_end = end_time + timedelta(hours=1)
         update_request = {"endTime": new_end}
-        self.assert_not_allowed(self.client.put(self.RESERVATION_URL + "/" + str(reservation['id']), data=json.dumps(update_request, default=self.datetime_converter), headers={'accept': 'application/json', 'Content-Type': 'application/json'}))
+        self.assert_not_allowed(self.client.put(RESERVATION_URL + "/" + str(reservation['id']), data=json.dumps(update_request, default=self.datetime_converter), headers=DEFAULT_HEADERS))
         self.delete_reservation(reservation['id'], 403, 200)
 
     def test_user_cannot_get_users(self):
         self.login_as_user()
-        self.assert_not_allowed(self.client.get(self.USER_URL))
-        self.assert_not_allowed(self.client.get(self.USER_URL + "/" + str(self.ADMIN_USER_ID)))
-        response = self.client.get(self.USER_URL + "/" + str(self.USER_USER_ID))
+        self.assert_not_allowed(self.client.get(USER_URL))
+        self.assert_not_allowed(self.client.get(USER_URL + "/" + str(ADMIN_USER_ID)))
+        response = self.client.get(USER_URL + "/" + str(USER_USER_ID))
         self.assertEqual(response.status_code, 200)
 
     def test_admin_user_can_read_all_users(self):
         self.login_as_admin()
-        read_response = self.client.get(self.USER_URL)
+        read_response = self.client.get(USER_URL)
         self.assertEqual(read_response.status_code, 200)
-        read_response = self.client.get(self.USER_URL + "/" + str(self.USER_USER_ID))
+        read_response = self.client.get(USER_URL + "/" + str(USER_USER_ID))
         self.assertEqual(read_response.status_code, 200)
-        read_response = self.client.get(self.USER_URL + "/" + str(self.ADMIN_USER_ID))
+        read_response = self.client.get(USER_URL + "/" + str(ADMIN_USER_ID))
         self.assertEqual(read_response.status_code, 200)
 
     def test_admin_can_update_and_delete_users(self):
         self.login_as_admin()
-        user_response = self.client.get(self.USER_URL + "/" + str(self.USER_USER_ID))
+        user_response = self.client.get(USER_URL + "/" + str(USER_USER_ID))
         language_before_update = json.loads(user_response.data)['language']
         self.assertEqual(language_before_update, 'de')
         update_request = {'language':'en'}
-        update_response = self.client.put(self.USER_URL + "/" + str(self.USER_USER_ID), data=json.dumps(update_request), headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        update_response = self.client.put(USER_URL + "/" + str(USER_USER_ID), data=json.dumps(update_request), headers=DEFAULT_HEADERS)
         self.assertEqual(update_response.status_code, 204)
-        user_response = self.client.get(self.USER_URL + "/" + str(self.USER_USER_ID))
+        user_response = self.client.get(USER_URL + "/" + str(USER_USER_ID))
         language_after_update = json.loads(user_response.data)['language']
         self.assertEqual(language_after_update, 'en')
         self.assertNotEqual(language_before_update, language_after_update)
-        delete_response = self.client.delete(self.USER_URL + "/" + str(self.USER_USER_ID))
+        delete_response = self.client.delete(USER_URL + "/" + str(USER_USER_ID))
         self.assertEqual(delete_response.status_code, 204)
-        user_response = self.client.get(self.USER_URL + "/" + str(self.USER_USER_ID))
+        user_response = self.client.get(USER_URL + "/" + str(USER_USER_ID))
         self.assertEqual(user_response.status_code, 404)
-        delete_response = self.client.delete(self.USER_URL + "/" + str(self.USER_USER_ID))
+        delete_response = self.client.delete(USER_URL + "/" + str(USER_USER_ID))
         self.assertEqual(delete_response.status_code, 404)
 
     @mock.patch('endpoints.user.smtplib')
     def test_create_user(self, mock_smtplib):
         request_data = {'username':'testuser', 'email':'testuser@247.ch', 'password':'password', 'language':'de'}
-        create_response = self.client.post(self.USER_URL, data=json.dumps(request_data), headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        create_response = self.client.post(USER_URL, data=json.dumps(request_data), headers=DEFAULT_HEADERS)
         self.assertEqual(create_response.status_code, 201, create_response.data)
         mock_smtplib.SMTP_SSL.assert_called_with(app.config['MAIL_HOST'],app.config['MAIL_PORT'])
         self.login_as_admin()
         update_data = {'active': 1}
-        update_response = self.client.put(self.USER_URL + "/" + str(self.USER_USER_ID + 1), data=json.dumps(update_data), headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        update_response = self.client.put(USER_URL + "/" + str(USER_USER_ID + 1), data=json.dumps(update_data), headers=DEFAULT_HEADERS)
         self.assertEqual(update_response.status_code, 204)
         mock_smtplib.SMTP_SSL.assert_called_with(app.config['MAIL_HOST'],app.config['MAIL_PORT'])
 
@@ -271,39 +269,39 @@ class IntegrationTest(LiveServerTestCase):
         base_reservation_end, base_reservation_start = self.add_base_reservation()
         overlapping_beginning_start = base_reservation_start - timedelta(hours=1)
         overlapping_beginning_end = base_reservation_start + timedelta(hours=1)
-        overlapping_beginning = Reservation("Overlapping beginning", overlapping_beginning_start, overlapping_beginning_end, False, self.ADMIN_USER_ID)
+        overlapping_beginning = Reservation("Overlapping beginning", overlapping_beginning_start, overlapping_beginning_end, False, ADMIN_USER_ID)
         self.login_as_admin()
         self.add_reservation(overlapping_beginning, 409)
         overlapping_end_start = base_reservation_end - timedelta(seconds=1)
         overlapping_end_end = base_reservation_end + timedelta(hours=1)
-        overlapping_end = Reservation("Overlapping end", overlapping_end_start, overlapping_end_end, False, self.ADMIN_USER_ID)
+        overlapping_end = Reservation("Overlapping end", overlapping_end_start, overlapping_end_end, False, ADMIN_USER_ID)
         self.add_reservation(overlapping_end, 409)
         contained_start = base_reservation_start + timedelta(minutes=1)
         contained_end = base_reservation_end - timedelta(minutes=1)
-        contained = Reservation("Contained", contained_start, contained_end, False, self.ADMIN_USER_ID)
+        contained = Reservation("Contained", contained_start, contained_end, False, ADMIN_USER_ID)
         self.add_reservation(contained, 409)
         wrapping_start = base_reservation_start - timedelta(minutes=1)
         wrapping_end = base_reservation_end + timedelta(minutes=1)
-        wrapping = Reservation("Wrapping", wrapping_start, wrapping_end, False, self.ADMIN_USER_ID)
+        wrapping = Reservation("Wrapping", wrapping_start, wrapping_end, False, ADMIN_USER_ID)
         self.add_reservation(wrapping, 409)
         perfect_match_start = base_reservation_end
         perfect_match_end = base_reservation_end + timedelta(hours=1)
-        perfect_match = Reservation("Perfect match", perfect_match_start, perfect_match_end, False, self.ADMIN_USER_ID)
+        perfect_match = Reservation("Perfect match", perfect_match_start, perfect_match_end, False, ADMIN_USER_ID)
         self.add_reservation(perfect_match)
         same_start_start = base_reservation_start
         same_start_end = base_reservation_end + timedelta(hours=1)
-        same_start = Reservation("Same start", same_start_start, same_start_end, False, self.ADMIN_USER_ID)
+        same_start = Reservation("Same start", same_start_start, same_start_end, False, ADMIN_USER_ID)
         self.add_reservation(same_start, 409)
         same_end_start = base_reservation_start + timedelta(hours=1)
         same_end_end = base_reservation_end
-        same_end = Reservation("Same end", same_end_start, same_end_end, False, self.ADMIN_USER_ID)
+        same_end = Reservation("Same end", same_end_start, same_end_end, False, ADMIN_USER_ID)
         self.add_reservation(same_end, 409)
 
     def test_wrong_time_values(self):
         base_reservation_end, base_reservation_start = self.add_base_reservation()
         wrong_values_start = datetime(2018, 01, 01, 10, 00, 00, 00)
         wrong_values_end = datetime(2018, 01, 01, 11, 00, 00, 00)
-        wrong_values = Reservation("Wrong values", wrong_values_start, wrong_values_end, False, self.ADMIN_USER_ID)
+        wrong_values = Reservation("Wrong values", wrong_values_start, wrong_values_end, False, ADMIN_USER_ID)
         wrong_values.endTime -= timedelta(hours=2)
         self.login_as_admin()
         self.add_reservation(wrong_values, 400)
@@ -317,70 +315,71 @@ class IntegrationTest(LiveServerTestCase):
         self.update_reservation({'endTime': "asdf"})
         invalid_start_date_data = wrong_values.to_dict()
         invalid_start_date_data['startTime'] = "asdf"
-        result = self.client.post(self.RESERVATION_URL, data=json.dumps(invalid_start_date_data, default=self.datetime_converter),
-                                  headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        result = self.client.post(RESERVATION_URL, data=json.dumps(invalid_start_date_data, default=self.datetime_converter),
+                                  headers=DEFAULT_HEADERS)
         self.assertEqual(result.status_code, 400, result.data)
         invalid_end_date_data = wrong_values.to_dict()
         invalid_end_date_data['endTime'] = "asdf"
-        result = self.client.post(self.RESERVATION_URL, data=json.dumps(invalid_end_date_data, default=self.datetime_converter),
-                                  headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        result = self.client.post(RESERVATION_URL, data=json.dumps(invalid_end_date_data, default=self.datetime_converter),
+                                  headers=DEFAULT_HEADERS)
         self.assertEqual(result.status_code, 400, result.data)
         missing_start_time_data = wrong_values.to_dict()
         del missing_start_time_data['startTime']
-        result = self.client.post(self.RESERVATION_URL, data=json.dumps(missing_start_time_data, default=self.datetime_converter),
-                                  headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+        result = self.client.post(RESERVATION_URL, data=json.dumps(missing_start_time_data, default=self.datetime_converter),
+                                  headers=DEFAULT_HEADERS)
         self.assertEqual(result.status_code, 400, result.data)
 
     def test_check_unique(self):
-        unique_result = self.client.get(self.USER_URL + "/checkUnique?key=username&value=newUser")
+        unique_result = self.client.get(USER_URL + "/checkUnique?key=username&value=newUser")
         self.assertEqual(unique_result.status_code, 200)
         self.assertEqual(json.loads(unique_result.data)['unique'], True)
-        unique_result = self.client.get(self.USER_URL + "/checkUnique?key=username&value=user")
+        unique_result = self.client.get(USER_URL + "/checkUnique?key=username&value=user")
         self.assertEqual(unique_result.status_code, 200)
         self.assertEqual(json.loads(unique_result.data)['unique'], False)
-        unique_result = self.client.get(self.USER_URL + "/checkUnique?key=username")
+        unique_result = self.client.get(USER_URL + "/checkUnique?key=username")
         self.assertEqual(unique_result.status_code, 400)
-        unique_result = self.client.get(self.USER_URL + "/checkUnique?value=test")
+        unique_result = self.client.get(USER_URL + "/checkUnique?value=test")
         self.assertEqual(unique_result.status_code, 400)
-        unique_result = self.client.get(self.USER_URL + "/checkUnique?key=asdf&value=asdf")
+        unique_result = self.client.get(USER_URL + "/checkUnique?key=asdf&value=asdf")
         self.assertEqual(unique_result.status_code, 400)
-        unique_result = self.client.get(self.USER_URL + "/checkUnique?key=email&value=pat@247.ch")
+        unique_result = self.client.get(USER_URL + "/checkUnique?key=email&value=pat@247.ch")
         self.assertEqual(unique_result.status_code, 200)
         self.assertEqual(json.loads(unique_result.data)['unique'], False)
-        unique_result = self.client.get(self.USER_URL + "/checkUnique?key=email&value=asdf@247.ch")
+        unique_result = self.client.get(USER_URL + "/checkUnique?key=email&value=asdf@247.ch")
         self.assertEqual(unique_result.status_code, 200)
         self.assertEqual(json.loads(unique_result.data)['unique'], True)
 
     def test_user_update_self_password(self):
         self.login_as_user()
         update_password_missing_old = {"password": "asdfasdf"}
-        update_result = self.client.put(self.USER_URL + "/" + str(self.USER_USER_ID),
+        update_result = self.client.put(USER_URL + "/" + str(USER_USER_ID),
                                         data=json.dumps(update_password_missing_old),
-                                        headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+                                        headers=DEFAULT_HEADERS)
         self.assertEqual(update_result.status_code, 400, update_result.data)
         self.assertEqual(json.loads(update_result.data)['error']['msg'], "Current password must be provided as \"oldPassword\" within the request body")
         update_password_mismatch_old = {"password": "asdf", "oldPassword": "asdfasdf"}
-        update_result = self.client.put(self.USER_URL + "/" + str(self.USER_USER_ID),
+        update_result = self.client.put(USER_URL + "/" + str(USER_USER_ID),
                                         data=json.dumps(update_password_mismatch_old),
-                                        headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+                                        headers=DEFAULT_HEADERS)
         self.assertEqual(update_result.status_code, 401, update_result.data)
         self.assertEqual(json.loads(update_result.data)['error']['msg'], "Password missmatch for user")
         update_password_request = {"password": "asdf", "oldPassword": "password" }
-        update_result = self.client.put(self.USER_URL + "/" + str(self.USER_USER_ID),
+        update_result = self.client.put(USER_URL + "/" + str(USER_USER_ID),
                                         data=json.dumps(update_password_request),
-                                        headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+                                        headers=DEFAULT_HEADERS)
         self.assertEqual(update_result.status_code, 400, update_result.data)
         self.assertEqual(json.loads(update_result.data)['error']['msg'], "Password needs to be at least 8 characters long")
         update_password_request = {"password": "newPassword", "oldPassword": "password" }
-        update_result = self.client.put(self.USER_URL + "/" + str(self.USER_USER_ID),
+        update_result = self.client.put(USER_URL + "/" + str(USER_USER_ID),
                                         data=json.dumps(update_password_request),
-                                        headers={'accept': 'application/json', 'Content-Type': 'application/json'})
+                                        headers=DEFAULT_HEADERS)
         self.assertEqual(update_result.status_code, 204, update_result.data)
         auth = "Basic " + base64.b64encode("user:newPassword")
         result = self.client.get("/token", None, headers={'Authorization': auth})
         self.assertEqual(result.status_code, 200, result.data)
 
-        # TODO: Update protected valus (username, email)
+
+    # TODO: Update protected user valus (username, email)
 
 
 if __name__ == '__main__':
