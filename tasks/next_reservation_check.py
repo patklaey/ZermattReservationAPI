@@ -2,7 +2,7 @@ import locale
 import smtplib
 from locale import setlocale
 
-from main import app
+from main import app, db
 import pytz
 from datetime import datetime, timedelta
 from constants import MAIL_MESSAGES
@@ -45,8 +45,10 @@ def check_all_users():
     all_users = User.query.all()
     for user in all_users:
         next_reservation = user.get_next_reservation()
-        if next_reservation is not None:
+        if next_reservation is not None and not next_reservation.reminderMailSent:
             start_time = next_reservation.startTime
             if start_time - timedelta(days=2) < now:
                 send_friendly_remember(next_reservation, user, mailer)
+                next_reservation.reminderMailSent = True
+                db.session.commit()
     mailer.quit()
