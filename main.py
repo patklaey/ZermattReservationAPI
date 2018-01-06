@@ -1,17 +1,32 @@
+import atexit
 from flask import Flask, jsonify, g, request, make_response
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, set_access_cookies, jwt_required, unset_jwt_cookies
+from apscheduler.schedulers.background import BackgroundScheduler
+import logging
+
+logging.basicConfig()
 
 app = Flask(__name__)
 app.config.from_pyfile('./config/config.py')
 db = SQLAlchemy(app)
 CORS(app, supports_credentials=True)
+migrate = Migrate(app, db)
 
 jwt = JWTManager(app)
 
+from tasks.next_reservation_check import check_all_users
 from DB.User import User
 from endpoints import reservation, user
+
+scheduler = BackgroundScheduler(daemon=True)
+scheduler.add_job(check_all_users,'interval', hours=4)
+scheduler.start()
+
+# Shut down the scheduler when exiting the app
+atexit.register(lambda: scheduler.shutdown())
 
 @app.route('/')
 def index():

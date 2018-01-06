@@ -1,49 +1,12 @@
-# coding=utf-8
 import smtplib
 import copy
-
-import pytz
-from datetime import datetime
 from email.mime.text import MIMEText
 from main import app, db
 from flask import jsonify, request
 from DB.User import User
 from DB.Reservation import Reservation
 from flask_jwt_extended import jwt_required, get_jwt_identity
-
-PASSWORD_MIN_LENGTH = 8
-MAIL_MESSAGES = {
-    'de': {
-        'registration' : {
-            'subject': "Registration auf zermatt.patklaey.ch",
-            'message': "Hallo {}\n\nVielen Dank für die Registrierung, dein Konto wird bald aktiviert. Du wirst ein weiteres Mail mit der Aktivierungsbestäting für dein Konto erhalten.\n\nZermatt Reservationen"
-        },
-        'activation' : {
-            'subject' : "Konto auf zermatt.patklaey.ch aktiviert",
-            'message' : "Hallo {}\n\nDein Konto wurde soeben von einem Administrator aktiviert. Du kannst dich ab sofort auf https://zermatt.patklaey.ch einloggen und reservationen tätigen.\n\nViel Spass.\n\nZermatt Reservationen"
-        }
-    },
-    'de-be': {
-        'registration' : {
-            'subject': "Registration uf zermatt.patklaey.ch",
-            'message': "Hallo {}\n\nMerci viu mau für d Registrierig, dis Konto wird gli aktiviert. Du wirsch es witers Mail mit dr Aktivierigsbestätigung für dis Konto becho.\n\nZermatt Reservatione"
-        },
-        'activation' : {
-            'subject' : "Konto uf zermatt.patklaey.ch isch aktiviert",
-            'message' : "Hallo {}\n\nDis Konto isch grad vomene Administrator aktiviert worde. Du chasch di ab sofort uf https://zermatt.patklaey.ch ilogge u reservatione tätige.\n\nViu Spass.\n\nZermatt Reservatione"
-        }
-    },
-    'en': {
-        'registration' : {
-            'subject': "SignUp on zermatt.patklaey.ch",
-            'message': "Hello {}\n\nThank you for signing up, your account will be activated soon. You will get another mail confirming the account activation.\n\nZermatt Reservations"
-        },
-        'activation' : {
-            'subject' : "Account on zermatt.patklaey.ch activated",
-            'message' : "Hello {}\n\nYour account has just been activated. You can now login on https://zermatt.patklaey.ch and add reservations.\n\nHave fun\n\nZermatt Reservations"
-        }
-    }
-}
+from constants import MAIL_MESSAGES, PASSWORD_MIN_LENGTH
 
 
 @app.route('/users')
@@ -169,13 +132,10 @@ def check_unique_attribute():
 
 @app.route('/users/<int:user_id>/nextReservation', methods=["GET"])
 def get_next_reservation(user_id):
-    now = pytz.utc.localize(datetime.now())
-    all_user_reservations = Reservation.query.filter_by(userId=user_id).order_by(Reservation.startTime.asc()).all()
-    next_reservation = None
-    for reservation in all_user_reservations:
-        if reservation.startTime > now:
-            next_reservation = reservation
-            break
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': {'msg': 'User not found', 'code': 16, 'info': user_id}}), 404
+    next_reservation = user.get_next_reservation()
     if next_reservation is None:
         return '', 204
     return jsonify(next_reservation.to_dict()), 200

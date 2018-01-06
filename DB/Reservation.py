@@ -14,12 +14,14 @@ class Reservation(db.Model):
     title = db.Column(db.String(80))
     description = db.Column(db.String(256))
     userId = db.Column(db.Integer, db.ForeignKey('users.id'))
+    reminderMailSent = db.Column(db.Boolean)
 
     def __init__(self, title, start_date, end_date, all_day, user_id, description=""):
         self.title = title
         self.description = description
         self.allDay = all_day
         self.userId = user_id
+        self.reminderMailSent = False
 
         if not type(start_date) is datetime:
             raise ValueError("start_date must be a datetime object")
