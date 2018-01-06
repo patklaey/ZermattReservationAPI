@@ -15,7 +15,7 @@ def datetime_converter(object):
         return object.__str__()
 
 
-def send_friendly_remember(next_reservation, user, mailer):
+def send_friendly_reminder(next_reservation, user, mailer):
     mail_to = user.email
     mail_from = app.config['MAIL_FROM']
     user_locale = "en_US" if user.language == "en" else "de_CH"
@@ -48,7 +48,7 @@ def check_all_users():
         if next_reservation is not None and not next_reservation.reminderMailSent:
             start_time = next_reservation.startTime
             if start_time - timedelta(days=2) < now:
-                send_friendly_remember(next_reservation, user, mailer)
+                send_friendly_reminder(next_reservation, user, mailer)
                 next_reservation.reminderMailSent = True
                 db.session.commit()
     mailer.quit()
