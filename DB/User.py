@@ -1,6 +1,10 @@
+from datetime import datetime
+import pytz
 from main import db, jwt, g
 from passlib.apps import custom_app_context as pwd_context
 from flask_jwt_extended import create_access_token
+from DB.Reservation import Reservation
+
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -51,17 +55,22 @@ class User(db.Model):
     def get_required_attributes():
         return ['username', 'password', 'email', 'language']
 
-
     @staticmethod
     def get_all_attributes():
         return ['username', 'password', 'email', 'admin', 'active', 'language']
-
 
     @staticmethod
     def get_admin_accounts():
         return User.query.filter_by(admin=True).all()
 
-
     @staticmethod
     def get_protected_attributes():
         return ['active', 'admin', 'username', 'email']
+
+    def get_next_reservation(self):
+        now = pytz.utc.localize(datetime.now())
+        all_user_reservations = Reservation.query.filter_by(userId=self.id).order_by(Reservation.startTime.asc()).all()
+        for reservation in all_user_reservations:
+            if reservation.startTime > now:
+                return reservation
+        return None
