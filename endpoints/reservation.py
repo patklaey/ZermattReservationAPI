@@ -60,7 +60,6 @@ def post_reservations():
             return jsonify({"error" : { 'msg' : "Start date cannot be after end date", 'code' : 6 }}), 400
         else:
             # Log error
-            print error
             return jsonify({"error" : { 'msg' : "Cannot create reservation", 'code' : 7 }}), 400
 
     try:
@@ -122,7 +121,6 @@ def update_reservation(id):
     except Exception as error:
         db.session.rollback()
         # Log erro
-        print error
         return jsonify({"error": { 'msg' : "Failed to update reservation", 'code' : 13 }}), 500
 
 
@@ -145,7 +143,6 @@ def remove_reservation(id):
         return '', 204
     except Exception as error:
         db.session.rollback()
-        print error
         return jsonify({"error": { 'msg' : "Failed to delete reservation", 'code' : 15 }}), 500
 
 

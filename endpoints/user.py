@@ -109,7 +109,6 @@ def delete_user(user_id):
         return '', 204
     except Exception as error:
         # Log error
-        print error
         return jsonify({"error": {'msg': "Cannot delete user", 'code': 18}}), 500
 
 

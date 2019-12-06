@@ -40,7 +40,6 @@ def check_all_users():
     mail_pass = app.config['MAIL_LOGIN_PASS']
     mailer = smtplib.SMTP_SSL(mail_host, mail_port)
     mailer.login(mail_user, mail_pass)
-    print "Start checking reservations"
     now = pytz.utc.localize(datetime.now())
     all_users = User.query.all()
     for user in all_users:
